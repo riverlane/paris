@@ -94,68 +94,68 @@ def train_svm(training_example_wfns):
 # we measure ZZ - the parity of the string. we can calculate the parity
 # of a basis state repr as a int by bin(s).count("1") % 2 (the number of ones)
 # and then generate trial states by lin. combinations of these.
+if __name__ == "__main__":
+    NQ = 2
+    basis_states = [i for i in range(0, 2**NQ)]
+    evens = [s for s in basis_states if bin(s).count("1") % 2 == 0]
+    odds = [s for s in basis_states if bin(s).count("1") % 2 == 1]
 
-NQ = 2
-basis_states = [i for i in range(0, 2**NQ)]
-evens = [s for s in basis_states if bin(s).count("1") % 2 == 0]
-odds = [s for s in basis_states if bin(s).count("1") % 2 == 1]
+    def int_to_basis_element(i, NQ=NQ):
+        wfn = np.zeros((2**NQ,))
+        wfn[i] = 1.0
+        return wfn
 
-def int_to_basis_element(i, NQ=NQ):
-    wfn = np.zeros((2**NQ,))
-    wfn[i] = 1.0
-    return wfn
+    # generate samples.
+    train_set = []
+    engine = MainEngine(backend=Simulator(), engine_list=[])
 
-# generate samples.
-train_set = []
-engine = MainEngine(backend=Simulator(), engine_list=[])
+    for _ in range(10):
 
-for _ in range(10):
+        # generate a coefficent vector in complex space.
+        weights_r = np.random.uniform(low=0.0, high=1.0, size=(2**(NQ-1),) )
+        weights_theta = np.random.uniform(low=0.0, high=2*np.pi, size=(2**(NQ-1),) )
+        weights = weights_r * np.exp(1j*weights_theta)
+        weights /= np.linalg.norm(weights) # normalize
 
-    # generate a coefficent vector in complex space.
-    weights_r = np.random.uniform(low=0.0, high=1.0, size=(2**(NQ-1),) )
-    weights_theta = np.random.uniform(low=0.0, high=2*np.pi, size=(2**(NQ-1),) )
-    weights = weights_r * np.exp(1j*weights_theta)
-    weights /= np.linalg.norm(weights) # normalize
+        label = random.choices([-1, 1])[0]
+        if label == -1: # 1 == odds
+            ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, odds)] )
+        else:
+            ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, evens)] )
 
-    label = random.choices([-1, 1])[0]
-    if label == -1: # 1 == odds
-        ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, odds)] )
-    else:
-        ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, evens)] )
+        qreg = engine.allocate_qureg(2) # make a new simulator
+        engine.backend.set_wavefunction(ket_theta, qreg) # we've been given this state.
+        engine.flush()
+        print(f"label {label} exp ZZ { engine.backend.get_expectation_value(QubitOperator('Z0 Z1'), qreg) }")
 
-    qreg = engine.allocate_qureg(2) # make a new simulator
-    engine.backend.set_wavefunction(ket_theta, qreg) # we've been given this state.
-    engine.flush()
-    print(f"label {label} exp ZZ { engine.backend.get_expectation_value(QubitOperator('Z0 Z1'), qreg) }")
+        H | qreg[0] # apply the test gates
+        X | qreg[1]
+        engine.flush()
+        _, ket_phi = engine.backend.cheat()
+        All(Measure) | qreg # clean up.
 
-    H | qreg[0] # apply the test gates
-    X | qreg[1]
-    engine.flush()
-    _, ket_phi = engine.backend.cheat()
-    All(Measure) | qreg # clean up.
+        train_set.append( (ket_phi, label) )
 
-    train_set.append( (ket_phi, label) )
-
-test = []
-for state in basis_states:
-    label = 1 if bin(state).count("1") % 2 == 0 else -1
-    qreg = engine.allocate_qureg(2) # make a new simulator
-    engine.backend.set_wavefunction(int_to_basis_element(state), qreg) # we've been given this state.
-    H | qreg[0] # apply the test gates
-    X | qreg[1]
-    engine.flush()
-    _, ket_phi = engine.backend.cheat(); All(Measure) | qreg; engine.flush()
-    test.append( (ket_phi, label) )
+    test = []
+    for state in basis_states:
+        label = 1 if bin(state).count("1") % 2 == 0 else -1
+        qreg = engine.allocate_qureg(2) # make a new simulator
+        engine.backend.set_wavefunction(int_to_basis_element(state), qreg) # we've been given this state.
+        H | qreg[0] # apply the test gates
+        X | qreg[1]
+        engine.flush()
+        _, ket_phi = engine.backend.cheat(); All(Measure) | qreg; engine.flush()
+        test.append( (ket_phi, label) )
 
 
-################# EVALUATION #################
-predict = train(train_set)
-for testvec, testres in test:
-    p = predict(testvec)
-    print(testres, p)
+    ################# EVALUATION #################
+    predict = train(train_set)
+    for testvec, testres in test:
+        p = predict(testvec)
+        print(testres, p)
 
-print("SVM classifier")
-predict_svm = train_svm(train_set)
-for testvec, testres in test:
-    p = predict_svm(testvec)
-    print(testres, p)
+    print("SVM classifier")
+    predict_svm = train_svm(train_set)
+    for testvec, testres in test:
+        p = predict_svm(testvec)
+        print(testres, p)
