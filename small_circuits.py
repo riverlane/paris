@@ -76,9 +76,10 @@ def train(training_example_wfns):
 def train_svm(training_example_wfns):
     """This is a train function for an unknown circuit of 2 single qubit gates from a given set on each of 2 qubits.
     """
-    clf = svm.SVC(gamma='scale')
+    clf = svm.SVC()
     vecs, labels = tuple(zip(*training_example_wfns))
     vecs = np.array(vecs); vecs = np.concatenate([vecs.real, vecs.imag], axis=1)
+
     clf.fit(vecs, labels)
 
     # now we create the inference function. This should take a state and produce a prediction.

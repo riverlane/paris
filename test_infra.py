@@ -45,11 +45,15 @@ def generate_pm_space_vectors(NQ, N, circuit):
         # print(f"label {label} exp ZZ { engine.backend.get_expectation_value(ops.QubitOperator('Z0 Z1'), qreg) }")
 
         for gate, idx in circuit:
-            gate | qreg[idx] # apply the test gates
+            if gate == ops.CNOT:
+                gate | (qreg[idx][0], qreg[idx][1])
+            else:
+                gate | qreg[idx] # apply the test gates
 
         engine.flush()
         _, ket_phi = engine.backend.cheat()
         ops.All(ops.Measure) | qreg # clean up.
+        del qreg
 
         train_set.append( (ket_phi, label) )
     return list(zip(*train_set)) # vectors, labels
@@ -63,12 +67,17 @@ def generate_basis_vectors(NQ, circuit):
     p1_test_v, p1_test_l = [], []
     for state in basis_states:
         label = 1 if bin(state).count("1") % 2 == 0 else -1
-        qreg = engine.allocate_qureg(2) # make a new simulator
+        qreg = engine.allocate_qureg(NQ) # make a new simulator
         engine.backend.set_wavefunction(int_to_basis_element(state, NQ), qreg) # we've been given this state.
+
         for gate, idx in circuit:
-            gate | qreg[idx] # apply the test gates
+            if gate == ops.CNOT:
+                gate | (qreg[idx][0], qreg[idx][1])
+            else:
+                gate | qreg[idx] # apply the test gates
+
         engine.flush()
-        _, ket_phi = engine.backend.cheat(); ops.All(ops.Measure) | qreg; engine.flush()
+        _, ket_phi = engine.backend.cheat(); ops.All(ops.Measure) | qreg; engine.flush(); del qreg
     return p1_test_v, p1_test_l
 
 
@@ -93,23 +102,60 @@ We showed that by applying a Hadamard gate we go back to just one of the states.
 """
 }
 
+def add_samples(problem):
+    problem["TrainSamples"], problem["TrainLabels"] = generate_pm_space_vectors(NQ=problem["NumQubits"],
+                                                                                N=problem["NSamples"],
+                                                                                circuit=problem["U"])
+    problem["TestVectors"], problem["TestLabels"] = generate_basis_vectors(NQ=problem["NumQubits"],
+                                                                           circuit=problem["U"])
+    problem["QuantumMeasurement"] = ops.QubitOperator(" ".join([f"Z{i}" for i in range(problem["NumQubits"])])),
+    return problem
 
 
 D_problem_1 = {
     "Name":"problem1",
     "NumQubits":2,
     "U":[(ops.H, 0), (ops.X, 1)], "Udag":[(ops.H, 0), (ops.X, 1)],
-    "NSamples":2,
-    "QuantumMeasurement":ops.QubitOperator("Z0 Z1"),
+    "NSamples":50,
     "TimeEst":5,
     "Hint":"""This your first problem to solve in your groups.
 The circuit consists of only 2 gates! One on each qubit. We promise the gates are only
 from [X, Y, Z, H] - it's your job to work out what ones.
 """
 }
+D_problem_1 = add_samples(D_problem_1)
+print("done 1")
 
-D_problem_1["TrainSamples"], D_problem_1["TrainLabels"] = generate_pm_space_vectors(NQ=2, N=100, circuit=D_problem_1["U"])
-D_problem_1["TestVectors"], D_problem_1["TestLabels"] = generate_basis_vectors(NQ=2, circuit=D_problem_1["U"])
+D_problem_2 = {
+    "Name":"problem2 - multiple qubits",
+    "NumQubits":2,
+    "U":[(ops.H, 0), (ops.X, 1), (ops.CNOT, slice(0, 2, 1)), (ops.Y, 1)], "Udag":None,
+    "NSamples":50,
+    "TimeEst":5,
+    "Hint":"""Problem 2: multiple qubit gates. You will need to try interacting
+the qubits with one another.
+"""
+}
+
+D_problem_2 = add_samples(D_problem_2)
+print("done 2")
+
+D_problem_3 = {
+    "Name":"problem3 - getting larger",
+    "NumQubits":7,
+    "U":[(ops.H, i) for i in range(7)],# +
+        #[(ops.CNOT, slice(i, i+2, 1)) for i in range(6)] +
+        #[(ops.H, i) for i in range(7)],
+    "Udag":None,
+    "NSamples":500,
+    "TimeEst":5,
+    "Hint":"""Torture test for SVM.
+"""
+}
+
+t0 = time.time()
+D_problem_3 = add_samples(D_problem_3)
+print(f"done 3 in {time.time()-t0}")
 
 
 def save_train_data(problem):
@@ -132,5 +178,7 @@ def evaluate(problem, trainfn):
     if dt > problem["TimeEst"]:
         print(f"It took more than {problem['TimeEst']} to train your solution - we are sure there is a better method!")
 
-from small_circuits import train
-evaluate(D_problem_1, train)
+print("doing trial for p3")
+
+from small_circuits import train, train_svm
+evaluate(D_problem_3, train_svm)
