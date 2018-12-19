@@ -41,7 +41,7 @@ def problemzero_example_train(training_data):
         qreg = engine.allocate_qureg(1)
         engine.backend.set_wavefunction(wavefunction, qreg)
 
-        H | qreg[0]
+        # H | qreg[0]
 
         engine.flush()
         result = engine.backend.get_expectation_value(QubitOperator("Z0"), qreg);
