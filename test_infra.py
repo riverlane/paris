@@ -78,6 +78,8 @@ def generate_basis_vectors(NQ, circuit):
 
         engine.flush()
         _, ket_phi = engine.backend.cheat(); ops.All(ops.Measure) | qreg; engine.flush(); del qreg
+        p1_test_v.append(ket_phi)
+        p1_test_l.append(label)
     return p1_test_v, p1_test_l
 
 
@@ -130,7 +132,7 @@ D_problem_2 = {
     "Name":"problem2",
     "NumQubits":2,
     "U":[(ops.H, 0), (ops.X, 1), (ops.CNOT, slice(0, 2, 1)), (ops.Y, 1)], "Udag":None,
-    "NSamples":50,
+    "NSamples":500,
     "TimeEst":5,
     "Hint":"""Problem 2: multiple qubit gates. You will need to try interacting
 the qubits with one another.
@@ -223,17 +225,9 @@ def evaluate(problem, trainfn):
 
     cost = 0.0
     for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
-        p = predict(testvec)
+        p = predictfn(testvec)
         cost += abs(p-testres)
 
-    print(f"error in your solution was {cost}, taking {dt}s to train.")
+    # print("error in your solution was {}, taking {:+02.3f}s to train.".format(cost, float(dt)))
     if dt > problem["TimeEst"]:
         print(f"It took more than {problem['TimeEst']} to train your solution - we are sure there is a better method!")
-
-# print("doing trial for p3")
-#
-# from small_circuits import train, train_svm
-# evaluate(D_problem_3, train_svm)
-#
-# print("doing trial for p4")
-# evaluate(C_problem_4, train_svm)
