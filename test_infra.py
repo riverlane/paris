@@ -93,7 +93,7 @@ D_problem_0 = {
     "TrainLabels":[1, -1],
 
     # For us: what measurement should be taken. The classical one is a map from a bitstr basis state to the observable
-    "QuantumMeasurement":ops.QubitOperator("Z0"), "ClassicalMeasurement": lambda wfn: np.abs(np.conj(wfn[0]*2-1) * (wfn[0]*2-1)), # amount in the 1 state
+    "QuantumMeasurement":ops.QubitOperator("Z0"),
 
     # This stuff should be displyed where the participants can see it.
     "Hint":"""This is the single qubit problem we walked through at the start of the hackathon.
@@ -127,7 +127,7 @@ D_problem_1 = add_samples(D_problem_1)
 print("done 1")
 
 D_problem_2 = {
-    "Name":"problem2 - multiple qubits",
+    "Name":"problem2",
     "NumQubits":2,
     "U":[(ops.H, 0), (ops.X, 1), (ops.CNOT, slice(0, 2, 1)), (ops.Y, 1)], "Udag":None,
     "NSamples":50,
@@ -141,15 +141,15 @@ D_problem_2 = add_samples(D_problem_2)
 print("done 2")
 
 D_problem_3 = {
-    "Name":"problem3 - getting larger",
+    "Name":"problem3",
     "NumQubits":7,
-    "U":[(ops.H, i) for i in range(7)],# +
-        #[(ops.CNOT, slice(i, i+2, 1)) for i in range(6)] +
-        #[(ops.H, i) for i in range(7)],
+    "U":[(ops.H, i) for i in range(7)] +
+        [(ops.CNOT, slice(i, i+2, 1)) for i in range(6)] +
+        [(ops.H, i) for i in range(7)],
     "Udag":None,
-    "NSamples":500,
+    "NSamples":5,
     "TimeEst":5,
-    "Hint":"""Torture test for SVM.
+    "Hint":"""Torture test for SVM. Large layers of gates.
 """
 }
 
@@ -158,11 +158,63 @@ D_problem_3 = add_samples(D_problem_3)
 print(f"done 3 in {time.time()-t0}")
 
 
+
+C_problem_4 = {
+    "Name":"problem4",
+    "NumQubits":8,
+    "Udag":None,
+    "NSamples":10,
+    "TimeEst":5,
+    "Hint":"""Torture test for SVM - large HW ansatz with random params.
+"""
+}
+
+depth = 5
+num_qubits = C_problem_4["NumQubits"]
+num_params = num_qubits * (3*depth + 2)
+param_values = np.random.uniform(low=0.0, high=1.0, size=(num_params,))
+circuit = []
+p_idx_subset = list(range(num_params))
+for d in range(depth+1):
+    if d == 0:
+        # strip the params we need for this depth
+        p_idx_subset, localps = p_idx_subset[2*num_qubits:], p_idx_subset[:2*num_qubits]
+        # logger.debug(f"local parmaters: {len(localps)}")
+        for i in range(num_qubits):
+            circuit.append( (ops.Rx(param_values[localps[i*2]]), i) )
+            circuit.append( (ops.Rz(param_values[localps[i*2+1]]), i) )
+    else:
+        p_idx_subset, localps = p_idx_subset[3*num_qubits:], p_idx_subset[:3*num_qubits]
+
+        for i in range(num_qubits):
+            circuit.append( (ops.Rz(param_values[localps[i*3]]), i) )
+            circuit.append( (ops.Rx(param_values[localps[i*3+1]]), i) )
+            circuit.append( (ops.Rz(param_values[localps[i*3+2]]), i) )
+
+    for qi in range(num_qubits-1):
+        circuit.append( (ops.CNOT, slice(qi, qi+2, 1)))
+
+
+C_problem_4["U"] = circuit
+C_problem_4 = add_samples(C_problem_4)
+
+
+t0 = time.time()
+D_problem_3 = add_samples(D_problem_3)
+print(f"done 3 in {time.time()-t0}")
+
+import pickle
 def save_train_data(problem):
-    with open(problem["Name"]) as f:
-        writer = csv.writer(f)
-        for vector, label in zip(problem["TrainSamples"], problem["SampleLabels"]):
-            writer.writerow([vector, label])
+    fname = problem["Name"] + "_spec.pyz"
+    with open(fname, "wb") as f:
+        pickle.dump(problem, f)
+        # writer = csv.writer(f)
+        # for vector, label in zip(problem["TrainSamples"], problem["SampleLabels"]):
+        #     writer.writerow([vector, label])
+
+for p in [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4]:
+    save_train_data(p)
+
 
 def evaluate(problem, trainfn):
     t0 = time.time()
@@ -178,7 +230,10 @@ def evaluate(problem, trainfn):
     if dt > problem["TimeEst"]:
         print(f"It took more than {problem['TimeEst']} to train your solution - we are sure there is a better method!")
 
-print("doing trial for p3")
-
-from small_circuits import train, train_svm
-evaluate(D_problem_3, train_svm)
+# print("doing trial for p3")
+#
+# from small_circuits import train, train_svm
+# evaluate(D_problem_3, train_svm)
+#
+# print("doing trial for p4")
+# evaluate(C_problem_4, train_svm)
