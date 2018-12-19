@@ -7,9 +7,176 @@ import random
 import numpy as np
 from sklearn import svm
 
-####################### PUBLIC #######################
 
-def train(training_example_wfns):
+############# UTILITY DEFS #############################
+
+def N_qubit_parity(N):
+    return QubitOperator(
+                " ".join([f"Z{i}" for i in range(N)])
+           )
+
+class SinglyControlledGate(projectq.ops.ControlledGate):
+    """The ProjectQ definition of a controlled gate expects to get a
+    list of lists of qubits. This is confusing and inconsistant.
+    This version just takes a list of [controlqubit, all, other, qubits].
+    """
+
+    def __init__(self, gate):
+        super().__init__(gate, n=1)
+
+    def __or__(self, qubits):
+        import projectq.meta
+        with projectq.meta.Control(qubits[0].engine, [qubits[0]]):
+            self._gate | qubits[1:]
+
+CNOT = SinglyControlledGate(X)
+
+####################### PUBLIC #######################
+def problemzero_example_train(training_data):
+    # we ignore the training data as we will look at it by hand!
+    print(training_data)
+
+    def infer(wavefunction):
+        engine = MainEngine(backend=Simulator(), engine_list=[])
+        qreg = engine.allocate_qureg(1)
+        engine.backend.set_wavefunction(wavefunction, qreg)
+
+        H | qreg[0]
+
+        engine.flush()
+        result = engine.backend.get_expectation_value(QubitOperator("Z0"), qreg);
+        All(Measure) | qreg; engine.flush(); del qreg # cleanup the simulator.
+        return result
+
+    return infer
+
+
+def train_discrete_general_example(training_example_wfns):
+    """The example trining function for the users.
+    This is for the descrite problems (staring with D), continious problems
+    have a diffrent train function.
+
+    Lots of oppertunaties exist for speeding this up. We have used this function internally
+    to annoate all problems with thr expected training time and will report if you beat that
+    or not!
+    """
+
+    num_qubits = int(np.log2(len(training_example_wfns[0][0]))) # the wavefunction has 2**NQ elements.
+    print(num_qubits)
+    measurement = N_qubit_parity(num_qubits) # we provide this.
+
+    # This is not every gate - you may need to extend this.
+    allowable_gates = \
+        [(H, i) for i in range(num_qubits)] + \
+        [(X, i) for i in range(num_qubits)] + \
+        [(CNOT, slice(i, i+2, 1)) for i in range(num_qubits-1)]
+
+
+    print([(str(g), i) for g, i in allowable_gates])
+
+    max_length = num_qubits * 2 # the total number of gates to consider
+
+    # NOTE: some gates are not affected by ordering!
+    # for example, 2 gates on 2 different qubits can be extchanged.
+    # this is not considered here.
+    possible_circuts = itertools.chain(*[
+                        itertools.permutations(allowable_gates, r=NG)
+                        for NG in range(max_length+1)
+                       ])
+
+    possible_circuts = list(possible_circuts)
+    print(f"Number of possible circuits to consider: {len(possible_circuts)}")
+
+    # if yuo want to print all the attempts, this can help:
+    # for p in possible_circuts:
+    #     print([(str(g), i) for g, i in p])
+
+    best_cost = float('Inf')
+    best_circuit = None
+    for current_circuit in possible_circuts:
+        current_cost = 0
+        for train_vector, train_label in training_example_wfns:
+            engine = MainEngine(backend=Simulator(), engine_list=[])
+            qreg = engine.allocate_qureg(num_qubits) # make a new simulator
+            engine.backend.set_wavefunction(train_vector, qreg) # we've been given this state.
+            engine.flush()
+
+            for gate, qubitidx in current_circuit:
+                gate | qreg[qubitidx]
+
+            engine.flush()
+            prediction = engine.backend.get_expectation_value(measurement, qreg)
+            All(Measure) | qreg; del qreg # clean up.
+            current_cost += abs(train_label-prediction)
+
+        print(".", end="", flush=True)
+        if current_cost < best_cost:
+            best_circuit = current_circuit
+            best_cost = current_cost
+        # if best_cost == 0.0:
+        #     break # done!
+
+    print("done")
+    print(f"best circuit: {[(str(g), i) for g, i in best_circuit]} with cost {best_cost}")
+
+    # now we create the inference function. This should take a state and produce a prediction.
+    def infer(wavefunction):
+        engine = MainEngine(backend=Simulator(), engine_list=[])
+        qreg = engine.allocate_qureg(num_qubits)
+        engine.backend.set_wavefunction(wavefunction, qreg)
+
+        for gate, qubitidx in best_circuit:
+            gate | qreg[qubitidx]
+
+        engine.flush()
+        result = engine.backend.get_expectation_value(measurement, qreg)
+        All(Measure) | qreg; engine.flush()
+        return result
+
+    return infer
+
+
+def train_svm(training_example_wfns):
+    """This is a train function for any circuit ignoring all quantum properties.
+    This will work given enough examples, but well be very slow!
+    """
+    clf = svm.SVC()
+    vecs, labels = tuple(zip(*training_example_wfns))
+    vecs = np.array(vecs); vecs = np.concatenate([vecs.real, vecs.imag], axis=1)
+
+    clf.fit(vecs, labels)
+
+    # now we create the inference function. This should take a state and produce a prediction.
+    def infer(wavefunction):
+        wavefunction = np.array(wavefunction).reshape(1, -1)
+        return clf.predict(np.concatenate([wavefunction.real, wavefunction.imag], axis=1))[0]
+
+    return infer
+
+
+#### OLD STUFF ##################
+
+def problemzero_exact_train(training_data):
+    # we ignore the training data as we will look at it by hand!
+    print(training_data)
+
+    def infer(wavefunction):
+        engine = MainEngine(backend=Simulator(), engine_list=[])
+        qreg = engine.allocate_qureg(2)
+        engine.backend.set_wavefunction(wavefunction, qreg)
+
+        H | qreg[0]
+        X | qreg[1]
+
+        engine.flush()
+        result = engine.backend.get_expectation_value(QubitOperator("Z0 Z1"), qreg);
+        All(Measure) | qreg; engine.flush(); del qreg # cleanup the simulator.
+        return result
+
+    return infer
+
+
+def train_2q(training_example_wfns):
     """This is a train function for an unknown circuit of 2 single qubit gates from a given set on each of 2 qubits.
     Using projectq we can encode information about the possible space of problem solutions and
     search over all.
@@ -71,92 +238,3 @@ def train(training_example_wfns):
     # It only makes sense to run this function in the same python process as
     # it was created in, but that's ok.
     return infer
-
-
-def train_svm(training_example_wfns):
-    """This is a train function for an unknown circuit of 2 single qubit gates from a given set on each of 2 qubits.
-    """
-    clf = svm.SVC()
-    vecs, labels = tuple(zip(*training_example_wfns))
-    vecs = np.array(vecs); vecs = np.concatenate([vecs.real, vecs.imag], axis=1)
-
-    clf.fit(vecs, labels)
-
-    # now we create the inference function. This should take a state and produce a prediction.
-    def infer(wavefunction):
-        wavefunction = np.array(wavefunction).reshape(1, -1)
-        return clf.predict(np.concatenate([wavefunction.real, wavefunction.imag], axis=1))
-
-    return infer
-
-
-############## INTERNAL #######################
-# generate data for training.
-# we measure ZZ - the parity of the string. we can calculate the parity
-# of a basis state repr as a int by bin(s).count("1") % 2 (the number of ones)
-# and then generate trial states by lin. combinations of these.
-if __name__ == "__main__":
-    NQ = 2
-    basis_states = [i for i in range(0, 2**NQ)]
-    evens = [s for s in basis_states if bin(s).count("1") % 2 == 0]
-    odds = [s for s in basis_states if bin(s).count("1") % 2 == 1]
-
-    def int_to_basis_element(i, NQ=NQ):
-        wfn = np.zeros((2**NQ,))
-        wfn[i] = 1.0
-        return wfn
-
-    # generate samples.
-    train_set = []
-    engine = MainEngine(backend=Simulator(), engine_list=[])
-
-    for _ in range(10):
-
-        # generate a coefficent vector in complex space.
-        weights_r = np.random.uniform(low=0.0, high=1.0, size=(2**(NQ-1),) )
-        weights_theta = np.random.uniform(low=0.0, high=2*np.pi, size=(2**(NQ-1),) )
-        weights = weights_r * np.exp(1j*weights_theta)
-        weights /= np.linalg.norm(weights) # normalize
-
-        label = random.choices([-1, 1])[0]
-        if label == -1: # 1 == odds
-            ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, odds)] )
-        else:
-            ket_theta = sum( [coeff * int_to_basis_element(i) for coeff, i in zip(weights, evens)] )
-
-        qreg = engine.allocate_qureg(2) # make a new simulator
-        engine.backend.set_wavefunction(ket_theta, qreg) # we've been given this state.
-        engine.flush()
-        print(f"label {label} exp ZZ { engine.backend.get_expectation_value(QubitOperator('Z0 Z1'), qreg) }")
-
-        H | qreg[0] # apply the test gates
-        X | qreg[1]
-        engine.flush()
-        _, ket_phi = engine.backend.cheat()
-        All(Measure) | qreg # clean up.
-
-        train_set.append( (ket_phi, label) )
-
-    test = []
-    for state in basis_states:
-        label = 1 if bin(state).count("1") % 2 == 0 else -1
-        qreg = engine.allocate_qureg(2) # make a new simulator
-        engine.backend.set_wavefunction(int_to_basis_element(state), qreg) # we've been given this state.
-        H | qreg[0] # apply the test gates
-        X | qreg[1]
-        engine.flush()
-        _, ket_phi = engine.backend.cheat(); All(Measure) | qreg; engine.flush()
-        test.append( (ket_phi, label) )
-
-
-    ################# EVALUATION #################
-    predict = train(train_set)
-    for testvec, testres in test:
-        p = predict(testvec)
-        print(testres, p)
-
-    print("SVM classifier")
-    predict_svm = train_svm(train_set)
-    for testvec, testres in test:
-        p = predict_svm(testvec)
-        print(testres, p)
