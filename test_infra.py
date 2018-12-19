@@ -11,6 +11,13 @@ import itertools
 import random
 import time
 
+import argparse
+parser = argparse.ArgumentParser(description='Generate test sets.')
+parser.add_argument('--problems', metavar='P', type=int, nargs='+', default=[0, 1, 2, 3, 4],
+                    help='problems to regenerate data for.')
+
+args = parser.parse_args()
+
 def int_to_basis_element(i, NQ):
     wfn = np.zeros((2**NQ,))
     wfn[i] = 1.0
@@ -25,8 +32,12 @@ def generate_pm_space_vectors(NQ, N, circuit):
     train_set = []
     engine = MainEngine(backend=Simulator(), engine_list=[])
 
-    for _ in range(N):
+    t0 = time.time()
+    for n in range(N):
 
+        if time.time()-t0 > 10:
+            print(n, N)
+            t0 = time.time()
         # generate a coefficent vector in complex space.
         weights_r = np.random.uniform(low=0.0, high=1.0, size=(2**(NQ-1),) )
         weights_theta = np.random.uniform(low=0.0, high=2*np.pi, size=(2**(NQ-1),) )
@@ -83,6 +94,16 @@ def generate_basis_vectors(NQ, circuit):
     return p1_test_v, p1_test_l
 
 
+def add_samples(problem):
+    problem["TrainSamples"], problem["TrainLabels"] = generate_pm_space_vectors(NQ=problem["NumQubits"],
+                                                                                N=problem["NSamples"],
+                                                                                circuit=problem["U"])
+    problem["TestVectors"], problem["TestLabels"] = generate_basis_vectors(NQ=problem["NumQubits"],
+                                                                           circuit=problem["U"])
+    problem["QuantumMeasurement"] = ops.QubitOperator(" ".join([f"Z{i}" for i in range(problem["NumQubits"])])),
+    return problem
+
+
 D_problem_0 = {
     "Name":"problem0",
     "NumQubits":1,
@@ -104,15 +125,6 @@ We showed that by applying a Hadamard gate we go back to just one of the states.
 """
 }
 
-def add_samples(problem):
-    problem["TrainSamples"], problem["TrainLabels"] = generate_pm_space_vectors(NQ=problem["NumQubits"],
-                                                                                N=problem["NSamples"],
-                                                                                circuit=problem["U"])
-    problem["TestVectors"], problem["TestLabels"] = generate_basis_vectors(NQ=problem["NumQubits"],
-                                                                           circuit=problem["U"])
-    problem["QuantumMeasurement"] = ops.QubitOperator(" ".join([f"Z{i}" for i in range(problem["NumQubits"])])),
-    return problem
-
 
 D_problem_1 = {
     "Name":"problem1",
@@ -125,8 +137,10 @@ The circuit consists of only 2 gates! One on each qubit. We promise the gates ar
 from [X, Y, Z, H] - it's your job to work out what ones.
 """
 }
-D_problem_1 = add_samples(D_problem_1)
-print("done 1")
+
+if 1 in args.problems:
+    D_problem_1 = add_samples(D_problem_1)
+    print("done 1")
 
 D_problem_2 = {
     "Name":"problem2",
@@ -139,71 +153,68 @@ the qubits with one another.
 """
 }
 
-D_problem_2 = add_samples(D_problem_2)
-print("done 2")
+if 2 in args.problems:
+    D_problem_2 = add_samples(D_problem_2)
+    print("done 2")
 
 D_problem_3 = {
     "Name":"problem3",
-    "NumQubits":7,
-    "U":[(ops.H, i) for i in range(7)] +
-        [(ops.CNOT, slice(i, i+2, 1)) for i in range(6)] +
-        [(ops.H, i) for i in range(7)],
+    "NumQubits":5,
+    "U":[(ops.H, i) for i in range(5)] +
+        [(ops.CNOT, slice(i, i+2, 1)) for i in range(4)],
     "Udag":None,
-    "NSamples":5,
+    "NSamples":5000,
     "TimeEst":5,
     "Hint":"""Torture test for SVM. Large layers of gates.
 """
 }
 
-t0 = time.time()
-D_problem_3 = add_samples(D_problem_3)
-print(f"done 3 in {time.time()-t0}")
-
-
+if 3 in args.problems:
+    t0 = time.time()
+    D_problem_3 = add_samples(D_problem_3)
+    print(f"done 3 in {time.time()-t0}")
 
 C_problem_4 = {
     "Name":"problem4",
     "NumQubits":8,
     "Udag":None,
-    "NSamples":10,
+    "NSamples":500,
     "TimeEst":5,
     "Hint":"""Torture test for SVM - large HW ansatz with random params.
 """
 }
 
-depth = 5
-num_qubits = C_problem_4["NumQubits"]
-num_params = num_qubits * (3*depth + 2)
-param_values = np.random.uniform(low=0.0, high=1.0, size=(num_params,))
-circuit = []
-p_idx_subset = list(range(num_params))
-for d in range(depth+1):
-    if d == 0:
-        # strip the params we need for this depth
-        p_idx_subset, localps = p_idx_subset[2*num_qubits:], p_idx_subset[:2*num_qubits]
-        # logger.debug(f"local parmaters: {len(localps)}")
-        for i in range(num_qubits):
-            circuit.append( (ops.Rx(param_values[localps[i*2]]), i) )
-            circuit.append( (ops.Rz(param_values[localps[i*2+1]]), i) )
-    else:
-        p_idx_subset, localps = p_idx_subset[3*num_qubits:], p_idx_subset[:3*num_qubits]
+if 4 in args.problems:
+    depth = 5
+    num_qubits = C_problem_4["NumQubits"]
+    num_params = num_qubits * (3*depth + 2)
+    param_values = np.random.uniform(low=0.0, high=1.0, size=(num_params,))
+    circuit = []
+    p_idx_subset = list(range(num_params))
+    for d in range(depth+1):
+        if d == 0:
+            # strip the params we need for this depth
+            p_idx_subset, localps = p_idx_subset[2*num_qubits:], p_idx_subset[:2*num_qubits]
+            # logger.debug(f"local parmaters: {len(localps)}")
+            for i in range(num_qubits):
+                circuit.append( (ops.Rx(param_values[localps[i*2]]), i) )
+                circuit.append( (ops.Rz(param_values[localps[i*2+1]]), i) )
+        else:
+            p_idx_subset, localps = p_idx_subset[3*num_qubits:], p_idx_subset[:3*num_qubits]
 
-        for i in range(num_qubits):
-            circuit.append( (ops.Rz(param_values[localps[i*3]]), i) )
-            circuit.append( (ops.Rx(param_values[localps[i*3+1]]), i) )
-            circuit.append( (ops.Rz(param_values[localps[i*3+2]]), i) )
+            for i in range(num_qubits):
+                circuit.append( (ops.Rz(param_values[localps[i*3]]), i) )
+                circuit.append( (ops.Rx(param_values[localps[i*3+1]]), i) )
+                circuit.append( (ops.Rz(param_values[localps[i*3+2]]), i) )
 
-    for qi in range(num_qubits-1):
-        circuit.append( (ops.CNOT, slice(qi, qi+2, 1)))
+        for qi in range(num_qubits-1):
+            circuit.append( (ops.CNOT, slice(qi, qi+2, 1)))
+
+    C_problem_4["U"] = circuit
+    C_problem_4 = add_samples(C_problem_4)
+    print("done 4")
 
 
-C_problem_4["U"] = circuit
-C_problem_4 = add_samples(C_problem_4)
-
-
-t0 = time.time()
-D_problem_3 = add_samples(D_problem_3)
-print(f"done 3 in {time.time()-t0}")
 
 import pickle
 def save_train_data(problem):
@@ -214,8 +225,9 @@ def save_train_data(problem):
         # for vector, label in zip(problem["TrainSamples"], problem["SampleLabels"]):
         #     writer.writerow([vector, label])
 
-for p in [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4]:
-    save_train_data(p)
+problems = [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4]
+for pi in args.problems:
+    save_train_data(problems[pi])
 
 
 def evaluate(problem, trainfn):
