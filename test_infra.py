@@ -13,7 +13,7 @@ import time
 
 import argparse
 parser = argparse.ArgumentParser(description='Generate test sets.')
-parser.add_argument('--problems', metavar='P', type=int, nargs='+', default=[0, 1, 2, 3, 4],
+parser.add_argument('--problems', metavar='P', type=int, nargs='+', default=[0, 1, 2, 3, 4, 5],
                     help='problems to regenerate data for.')
 
 args = parser.parse_args()
@@ -188,7 +188,7 @@ if 4 in args.problems:
     depth = 5
     num_qubits = C_problem_4["NumQubits"]
     num_params = num_qubits * (3*depth + 2)
-    param_values = np.random.uniform(low=0.0, high=1.0, size=(num_params,))
+    param_values = np.random.uniform(low=0.0, high=2.0*np.pi, size=(num_params,))
     circuit = []
     p_idx_subset = list(range(num_params))
     for d in range(depth+1):
@@ -215,6 +215,86 @@ if 4 in args.problems:
     print("done 4")
 
 
+C_problem_5 = {
+    "Name":"problem5",
+    "NumQubits":10,
+    "Udag":None,
+    "NSamples":20,
+    "TimeEst":1200,
+    "Hint":"""Continuous problem with 10 qubits. 
+"""
+}
+
+if 5 in args.problems:
+    outer_depth = 2
+    inner_depth = 1
+    depth = outer_depth*inner_depth
+
+    num_qubits = C_problem_5["NumQubits"]
+    num_params = num_qubits*outer_depth*inner_depth
+    param_values = np.random.uniform(low=0.0, high=2.0*np.pi, size=num_params)
+
+    rot_arr = [ops.Rx, ops.Ry, ops.Rz]
+    rots = np.random.choice(rot_arr, size=num_params)
+
+    rots_str = ['']*num_params
+    for iparam in range(num_params):
+        if (rots[iparam] == ops.Rx):
+            rots_str[iparam] = 'Rx'
+        elif (rots[iparam] == ops.Ry):
+            rots_str[iparam] = 'Ry'
+        elif (rots[iparam] == ops.Rz):
+            rots_str[iparam] = 'Rz'
+
+    
+    if (inner_depth == 1):
+        hint_str = f"""{inner_depth} rotation gate is applied to each qubit.
+"""
+    else:
+        hint_str = f"""{inner_depth} rotation gates are applied to each qubit.
+"""
+    if (num_qubits == 2):
+        hint_str += f"""This is followed by a CNOT gate. The first qubit is used
+to control a NOT gate on the second.
+"""
+    else:
+        hint_str += f"""This is followed by {num_qubits - 1} CNOT gates. Each qubit in turn
+(except the last one) is used to control a NOT gate on the next qubit.
+"""
+
+    if (outer_depth == 2):
+        hint_str += f"""This whole process (rotations and CNOTS) is repeated once more.
+"""
+    elif (outer_depth > 2):
+        hint_str += f"""This whole process (rotations and CNOTS) is repeated {outer_depth-1} times more.
+"""
+
+    hint_str += f"""The rotation gates are given below. They are ordered by qubit and then 
+application order so that the first rotation listed is the first rotation applied
+to the first qubit, the second rotation listed is the second rotation applied to 
+the first qubit, and so on. The gates are:
+{', '.join(rots_str)}"""
+
+    C_problem_5["Hint"] += hint_str
+
+    circuit = []
+
+    for iod in range(outer_depth):
+        for iid in range(inner_depth):
+            idepth = iod*inner_depth + iid
+
+            for iq in range(num_qubits):
+                circuit.append( (rots[depth*iq + idepth](param_values[depth*iq + idepth]), iq) )
+
+        for iq in range(num_qubits - 1):
+            circuit.append( (ops.CNOT, slice(iq,iq+2,1)))
+
+
+    C_problem_5["U"] = circuit
+    C_problem_5 = add_samples(C_problem_5)
+    print("done 5")
+
+
 
 import pickle
 def save_train_data(problem):
@@ -225,7 +305,7 @@ def save_train_data(problem):
         # for vector, label in zip(problem["TrainSamples"], problem["SampleLabels"]):
         #     writer.writerow([vector, label])
 
-problems = [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4]
+problems = [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4, C_problem_5]
 for pi in args.problems:
     save_train_data(problems[pi])
 
