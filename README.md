@@ -16,3 +16,11 @@ Next you will be free to attempt the discrete and continuous problem sets. We re
 In order to test your solutions, use `evaluate.py`. A example use is `./evaluate.py --fun train_discrete_general_example --stats --problem problem1 --n 4`. This runs your function `train_discrete_general_example` on problem 1, using 4 vectors for the training set.
 
 If you use the non-quantum solutions like `train_svm` you may want to use more training examples. the parameter `--n` controls this.
+
+## ToDo
+
+- Accurate time estimates for both default and improved solutions
+- Enough samples for all for SVM to work
+- Good hints
+- Notes on the introduction presentations
+- Data save format for CK (how to capture the users solutions)
