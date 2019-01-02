@@ -219,9 +219,9 @@ C_problem_5 = {
     "Name":"problem5",
     "NumQubits":10,
     "Udag":None,
-    "NSamples":20,
+    "NSamples":20000,
     "TimeEst":1200,
-    "Hint":"""Continuous problem with 10 qubits. 
+    "Hint":"""Continuous problem with 10 qubits.
 """
 }
 
@@ -246,7 +246,7 @@ if 5 in args.problems:
         elif (rots[iparam] == ops.Rz):
             rots_str[iparam] = 'Rz'
 
-    
+
     if (inner_depth == 1):
         hint_str = f"""{inner_depth} rotation gate is applied to each qubit.
 """
@@ -269,9 +269,9 @@ to control a NOT gate on the second.
         hint_str += f"""This whole process (rotations and CNOTS) is repeated {outer_depth-1} times more.
 """
 
-    hint_str += f"""The rotation gates are given below. They are ordered by qubit and then 
+    hint_str += f"""The rotation gates are given below. They are ordered by qubit and then
 application order so that the first rotation listed is the first rotation applied
-to the first qubit, the second rotation listed is the second rotation applied to 
+to the first qubit, the second rotation listed is the second rotation applied to
 the first qubit, and so on. The gates are:
 {', '.join(rots_str)}"""
 

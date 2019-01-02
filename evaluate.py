@@ -60,8 +60,8 @@ cost = 0.0
 for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     p = predictfn(testvec)
     cost += abs(p-testres)
-    if abs(p-testres) > 0.0001:
-        print(p, testres, testvec)
+    # if abs(p-testres) > 0.0001:
+    #     print(p, testres, testvec)
 
 print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
 if dt > problem["TimeEst"]:
