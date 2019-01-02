@@ -6,6 +6,8 @@ import itertools
 import random
 import numpy as np
 from sklearn import svm
+from scipy.optimize import minimize
+from functools import partial
 
 
 ############# UTILITY DEFS #############################
@@ -17,7 +19,7 @@ def N_qubit_parity(N):
 
 class SinglyControlledGate(projectq.ops.ControlledGate):
     """The ProjectQ definition of a controlled gate expects to get a
-    list of lists of qubits. This is confusing and inconsistant.
+    list of lists of qubits. This is confusing and inconsistent.
     This version just takes a list of [controlqubit, all, other, qubits].
     """
 
@@ -30,6 +32,36 @@ class SinglyControlledGate(projectq.ops.ControlledGate):
             self._gate | qubits[1:]
 
 CNOT = SinglyControlledGate(X)
+
+
+class HEInverse(object):
+
+    def __init__(self,num_qubits,depth,params):
+
+        self._num_qubits = num_qubits
+        self._depth = depth
+        self._params = params
+
+    def __or__(self, qubit_register):
+
+        for iod in range(self._depth):
+            #'Undo' CNOTS
+            for iq in range(self._num_qubits):
+                CNOT | (qubit_register[self._num_qubits-iq-2], qubit_register[self._num_qubits-iq-1])
+
+            for iq, qubit in enumerate(qubit_register):
+                Rz(self._params[iq*(3*self._depth+2) + 3*iod]) | qubit
+                Rx(self._params[iq*(3*self._depth+2) + 3*iod + 1]) | qubit
+                Rz(self._params[iq*(3*self._depth+2) + 3*iod + 2]) | qubit
+
+        # Final level
+        for iq in range(self._num_qubits):
+            CNOT | (qubit_register[self._num_qubits-iq-2], qubit_register[self._num_qubits-iq-1])
+
+        for iq, qubit in enumerate(qubit_register):
+            Rz(self._params[iq*(3*self._depth+2) + 3*self._depth]) | qubit
+            Rx(self._params[iq*(3*self._depth+2) + 3*self._depth + 1]) | qubit
+
 
 ####################### PUBLIC #######################
 def problemzero_example_train(training_data):
@@ -52,12 +84,12 @@ def problemzero_example_train(training_data):
 
 
 def train_discrete_general_example(training_example_wfns):
-    """The example trining function for the users.
-    This is for the descrite problems (staring with D), continious problems
-    have a diffrent train function.
+    """The example training function for the users.
+    This is for the discrete problems (staring with D), continuous problems
+    have a different train function.
 
-    Lots of oppertunaties exist for speeding this up. We have used this function internally
-    to annoate all problems with thr expected training time and will report if you beat that
+    Lots of opportunities exist for speeding this up. We have used this function internally
+    to annotate all problems with thr expected training time and will report if you beat that
     or not!
     """
 
@@ -77,7 +109,7 @@ def train_discrete_general_example(training_example_wfns):
     max_length = num_qubits * 2 # the total number of gates to consider
 
     # NOTE: some gates are not affected by ordering!
-    # for example, 2 gates on 2 different qubits can be extchanged.
+    # for example, 2 gates on 2 different qubits can be exchanged.
     # this is not considered here.
     possible_circuts = itertools.chain(*[
                         itertools.permutations(allowable_gates, r=NG)
@@ -87,7 +119,7 @@ def train_discrete_general_example(training_example_wfns):
     possible_circuts = list(possible_circuts)
     print(f"Number of possible circuits to consider: {len(possible_circuts)}")
 
-    # if yuo want to print all the attempts, this can help:
+    # if you want to print all the attempts, this can help:
     # for p in possible_circuts:
     #     print([(str(g), i) for g, i in p])
 
@@ -152,6 +184,86 @@ def train_svm(training_example_wfns):
         return clf.predict(np.concatenate([wavefunction.real, wavefunction.imag], axis=1))[0]
 
     return infer
+
+
+# Continuous training 
+
+
+def objective_function(params,n_qubit,depth,data,measurement,engine):
+
+    fun = 0.0
+    for train_vector, train_label in data:
+
+        pred = prediction(params,n_qubit,depth,train_vector,measurement,engine)
+
+        fun += ((pred - train_label)**2)
+
+    return fun
+
+
+def prediction(params,n_qubit,depth,vector,measurement,engine):
+
+    inv_circ = HEInverse(n_qubit,depth,params)
+    
+    op = measurement
+
+    qubit_register = engine.allocate_qureg(n_qubit)
+    engine.flush()
+
+    # Prepare data state
+    engine.backend.set_wavefunction(vector,qubit_register)
+
+    # Act circuit
+    inv_circ | qubit_register
+    engine.flush()
+
+    # Make measurement
+    pred = engine.backend.get_expectation_value(op, qubit_register)
+
+    engine.flush()
+
+    All(Measure) | qubit_register
+    engine.flush()
+
+    del qubit_register
+
+    return pred
+
+
+def train_cont(training_example_wfns):
+
+    eng = MainEngine(backend=Simulator())
+
+    depth = 1
+
+    num_qubits = int(np.log2(len(training_example_wfns[0][0])))
+
+    # Hardware efficient
+    num_params = num_qubits*(3*depth + 2)
+
+    measurement = N_qubit_parity(num_qubits)
+
+    obj_fun = partial(objective_function, n_qubit=num_qubits, depth=depth, 
+                      data=training_example_wfns, measurement=measurement,
+                      engine=eng)
+
+    init_params = np.random.uniform(0.0,2.0*np.pi,size=num_params)
+
+    res = minimize(fun=obj_fun, x0=init_params, method='Nelder-Mead', 
+                   tol=1e-1, options={'disp':True,'maxiter':1000})
+
+    best_params = res.x
+
+    def infer(vector):
+        pred = prediction(best_params,num_qubits,depth,vector,measurement,eng)
+
+        if (pred < 0.0):
+            return -1
+        else:
+            return 1
+
+    return infer
+    
 
 
 #### OLD STUFF ##################
@@ -232,7 +344,7 @@ def train_2q(training_example_wfns):
         result = engine.backend.get_expectation_value(measurement, qreg); All(Measure) | qreg; engine.flush()
         return result
 
-    # The only structure we are ENFORCING is that the uers provide us with this
+    # The only structure we are ENFORCING is that the users provide us with this
     # function. We will provide quantum examples but people are free to
     # use whatever they want.
     # It only makes sense to run this function in the same python process as

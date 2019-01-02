@@ -217,7 +217,7 @@ if 4 in args.problems:
 
 C_problem_5 = {
     "Name":"problem5",
-    "NumQubits":10,
+    "NumQubits":4,
     "Udag":None,
     "NSamples":20000,
     "TimeEst":1200,
@@ -248,10 +248,10 @@ if 5 in args.problems:
 
 
     if (inner_depth == 1):
-        hint_str = f"""{inner_depth} rotation gate is applied to each qubit.
+        hint_str += f"""{inner_depth} rotation gate is applied to each qubit.
 """
     else:
-        hint_str = f"""{inner_depth} rotation gates are applied to each qubit.
+        hint_str += f"""{inner_depth} rotation gates are applied to each qubit.
 """
     if (num_qubits == 2):
         hint_str += f"""This is followed by a CNOT gate. The first qubit is used
@@ -273,7 +273,8 @@ to control a NOT gate on the second.
 application order so that the first rotation listed is the first rotation applied
 to the first qubit, the second rotation listed is the second rotation applied to
 the first qubit, and so on. The gates are:
-{', '.join(rots_str)}"""
+{', '.join(rots_str)}.
+"""
 
     C_problem_5["Hint"] += hint_str
 

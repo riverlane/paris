@@ -24,6 +24,14 @@ In order to test your solutions, use `evaluate.py`. A example use is `./evaluate
 
 If you use the non-quantum solutions like `train_svm` you may want to use more training examples. the parameter `--n` controls this.
 
+## ToDo
+
+- Accurate time estimates for both default and improved solutions
+- Enough samples for all for SVM to work
+- Good hints
+- Notes on the introduction presentations
+- Data save format for CK (how to capture the users solutions)
+
 ## Introduction
 
 #### Outline
