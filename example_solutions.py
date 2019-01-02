@@ -73,6 +73,8 @@ def problemzero_example_train(training_data):
         qreg = engine.allocate_qureg(1)
         engine.backend.set_wavefunction(wavefunction, qreg)
 
+        # you will modify this line as part of the first session of the day.
+        # note that H is self-inverse (like a classical NOT): H^-1 == H.
         # H | qreg[0]
 
         engine.flush()
@@ -186,7 +188,7 @@ def train_svm(training_example_wfns):
     return infer
 
 
-# Continuous training 
+# Continuous training
 
 
 def objective_function(params,n_qubit,depth,data,measurement,engine):
@@ -204,7 +206,7 @@ def objective_function(params,n_qubit,depth,data,measurement,engine):
 def prediction(params,n_qubit,depth,vector,measurement,engine):
 
     inv_circ = HEInverse(n_qubit,depth,params)
-    
+
     op = measurement
 
     qubit_register = engine.allocate_qureg(n_qubit)
@@ -243,13 +245,13 @@ def train_cont(training_example_wfns):
 
     measurement = N_qubit_parity(num_qubits)
 
-    obj_fun = partial(objective_function, n_qubit=num_qubits, depth=depth, 
+    obj_fun = partial(objective_function, n_qubit=num_qubits, depth=depth,
                       data=training_example_wfns, measurement=measurement,
                       engine=eng)
 
     init_params = np.random.uniform(0.0,2.0*np.pi,size=num_params)
 
-    res = minimize(fun=obj_fun, x0=init_params, method='Nelder-Mead', 
+    res = minimize(fun=obj_fun, x0=init_params, method='Nelder-Mead',
                    tol=1e-1, options={'disp':True,'maxiter':1000})
 
     best_params = res.x
@@ -263,7 +265,7 @@ def train_cont(training_example_wfns):
             return 1
 
     return infer
-    
+
 
 
 #### OLD STUFF ##################

@@ -3,7 +3,7 @@ import argparse
 import pickle
 import sys
 import time
-import small_circuits as trialmodule
+import example_solutions as trialmodule
 
 parser = argparse.ArgumentParser(description='Tests your solutions for the quantum classification problem.')
 parser.add_argument('--solution_function_name', "--fun", metavar='S', type=str,
