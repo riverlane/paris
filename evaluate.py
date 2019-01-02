@@ -24,8 +24,9 @@ args = parser.parse_args()
 with open(args.problem+"_spec.pyz", "rb") as f:
     problem = pickle.load(f)
 
-print("")
+print("########## Problem hint: ####################")
 print(problem["Hint"], end="")
+print("########## Now running your code ############")
 
 if args.print_problem_stats:
     print(f"number of training samples: {len(problem['TrainSamples'])}")

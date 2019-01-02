@@ -109,6 +109,7 @@ def train_discrete_general_example(training_example_wfns):
     print([(str(g), i) for g, i in allowable_gates])
 
     max_length = num_qubits * 2 # the total number of gates to consider
+    print(f"Maximum gate depth {max_length}")
 
     # NOTE: some gates are not affected by ordering!
     # for example, 2 gates on 2 different qubits can be exchanged.
