@@ -1,14 +1,23 @@
 import numpy as np
 from qiskit import QuantumCircuit, QuantumRegister
 
+def parityOf(int_type):
+    parity = 0
+    while (int_type):
+        parity = ~parity
+        int_type = int_type & (int_type - 1)
+    return(parity)
+
 def compute_parity_exp_value(state_vector):
 
-    z_op = np.array([[1, 0], [0, -1]])
+    print(f"parity for vecotr {state_vector}")
+    exp = 0.0
+    for idx, coeff in enumerate(state_vector):
+        exp += coeff * coeff.conj() * (1 if parityOf(idx) == 0 else -1)
 
-    for i in range(int(np.log2(len(state_vector))) - 1):
-        z_op = np.kron(z_op, z_op)
+    return exp
 
-    return np.dot(state_vector, np.dot(z_op, state_vector.transpose()))
+
 
 def apply_hadamard_gate(circ: QuantumCircuit, q_reg: QuantumRegister, qubit_index: int) -> QuantumCircuit:
 
