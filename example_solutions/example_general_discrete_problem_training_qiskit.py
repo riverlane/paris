@@ -1,4 +1,4 @@
-from .helper_functions import *
+from .helper_functions import compute_parity_exp_value
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 import itertools
 
@@ -15,12 +15,15 @@ def example_general_discrete_problem_training_qiskit(training_data):
     num_qubits = int(np.log2(len(training_data[0][0]))) # the wavefunction has 2**NQ elements.
 
     # This is not every gate - you may need to extend this.
+    # A "gate" is a function that takes the circut and qreg (created later)
+    # and does your desired gate to it.
+    # We need this as gates are methods on the circuits rather than independant objects in qiskit.
     allowable_gates = \
-        [(apply_hadamard_gate, [i]) for i in range(num_qubits)] + \
-        [(apply_pauli_x_gate, [i]) for i in range(num_qubits)] + \
-        [(apply_cnot_gate, [i, i + 1]) for i in range(num_qubits - 1)]
+        [lambda circ, qreg: circ.h(qreg[i]) for i in range(num_qubits)] + \
+        [lambda circ, qreg: circ.x(qreg[i]) for i in range(num_qubits)] + \
+        [lambda circ, qreg: circ.cnot(qreg[i:i+1]) for i in range(num_qubits - 1)]
 
-    print([(str(g), i) for g, i in allowable_gates])
+    print([gfun for gfun in allowable_gates])
 
     max_length = num_qubits * 2 # the total number of gates to consider
     print(f"Maximum gate depth {max_length}")
@@ -53,17 +56,19 @@ def example_general_discrete_problem_training_qiskit(training_data):
                 qr = QuantumRegister(num_qubits, "qr")
                 circ = QuantumCircuit(qr)
 
-                for gate, args in current_circuit:
-                    circ = gate(circ, qr, *args)
+                for gate_application_function in current_circuit:
+                    gate_application_function(circ, qr)
+                # circ.h(qr[0])
 
                 opts = {"initial_statevector": train_vector}
-                result = execute(circ, simulator, backend_options=opts).result()
-                print(result.get_statevector(circ))
+                execution = execute(circ, simulator, backend_options=opts)
+                result = execution.result()
+                print(f"vector: {result.get_statevector(circ)}")
                 prediction = compute_parity_exp_value(result.get_statevector(circ))
 
                 current_cost += abs(train_label - prediction)
-                print(train_label)
-                print(prediction)
+                print(f"ground truth: {train_label}")
+                print(f"prediction:   {prediction}")
 
             print(".", end="", flush=True)
             if current_cost < best_cost:
@@ -73,7 +78,7 @@ def example_general_discrete_problem_training_qiskit(training_data):
             #     break # done!
 
     print("done")
-    print(f"best circuit: {[(str(g), i) for g, i in best_circuit]} with cost {best_cost}")
+    print(f"best circuit: {[gfun for gfun in best_circuit]} with cost {best_cost}")
 
     # now we create the inference function. This should take a state and produce a prediction.
     def infer(wavefunction):
@@ -82,8 +87,8 @@ def example_general_discrete_problem_training_qiskit(training_data):
         qr = QuantumRegister(num_qubits, "qr")
         circ = QuantumCircuit(qr)
 
-        for gate, args in best_circuit:
-            circ = gate(circ, qr, *args)
+        for gate in best_circuit:
+            gate(circ, qr)
 
         opts = {"initial_statevector": wavefunction}
         result = execute(circ, simulator, backend_options=opts).result()
