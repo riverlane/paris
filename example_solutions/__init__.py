@@ -1,3 +1,5 @@
 from example_solutions.example_problem_zero_training import *
 from example_solutions.example_general_discrete_problem_training_projectq import *
-from example_solutions.example_general_discrete_problem_training_qiskit import *
+from example_solutions.example_general_discrete_problem_training import *
+from example_solutions.example_classical_svm_training import *
+from example_solutions.example_general_continuous_problem_training import *

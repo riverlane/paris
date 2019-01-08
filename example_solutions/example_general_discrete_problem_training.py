@@ -1,8 +1,9 @@
 from .helper_functions import compute_parity_exp_value
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 import itertools
+import numpy as np
 
-def example_general_discrete_problem_training_qiskit(training_data):
+def example_general_discrete_problem_training(training_data):
     """The example training function for the users.
     This is for the discrete problems (staring with D), continuous problems
     have a different train function.
@@ -58,7 +59,6 @@ def example_general_discrete_problem_training_qiskit(training_data):
 
                 for gate_application_function in current_circuit:
                     gate_application_function(circ, qr)
-                # circ.h(qr[0])
 
                 opts = {"initial_statevector": train_vector}
                 execution = execute(circ, simulator, backend_options=opts)

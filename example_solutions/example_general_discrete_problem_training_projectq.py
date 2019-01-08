@@ -1,8 +1,8 @@
-from .helper_functions import *
 from projectq.ops import *
-from projectq import MainEngine, cengines
+from projectq import MainEngine
 from projectq.backends import Simulator
 import itertools
+import numpy as np
 
 def qubit_parity(num_qubits):
     return QubitOperator(
@@ -55,32 +55,33 @@ def example_general_discrete_problem_training_projectq(training_data):
     best_cost = float('Inf')
     best_circuit = None
     for current_circuit in possible_circuits:
-        if len(current_circuit) > 0:
-            current_cost = 0
-            for train_vector, train_label in training_data:
+        current_cost = 0
+        for train_vector, train_label in training_data:
 
-                engine = MainEngine(backend=Simulator(), engine_list=[])
-                qreg = engine.allocate_qureg(num_qubits) # make a new simulator
-                engine.backend.set_wavefunction(train_vector, qreg) # we've been given this state.
-                engine.flush()
+            engine = MainEngine(backend=Simulator(), engine_list=[])
+            qreg = engine.allocate_qureg(num_qubits)  # make a new simulator
+            engine.backend.set_wavefunction(train_vector, qreg)  # we've been given this state.
+            engine.flush()
 
-                for gate, qubitidx in current_circuit:
-                    gate | qreg[qubitidx]
+            for gate, qubitidx in current_circuit:
+                gate | qreg[qubitidx]
 
-                engine.flush()
-                prediction = engine.backend.get_expectation_value(measurement, qreg)
-                All(Measure) | qreg; del qreg # clean up.
+            engine.flush()
+            prediction = engine.backend.get_expectation_value(measurement, qreg)
+            All(Measure) | qreg;
+            del qreg  # clean up.
 
-                current_cost += abs(train_label - prediction)
-                print(train_label)
-                print(prediction)
+            current_cost += abs(train_label - prediction)
+            print(train_label)
+            print(prediction)
 
-            print(".", end="", flush=True)
-            if current_cost < best_cost:
-                best_circuit = current_circuit
-                best_cost = current_cost
-            # if best_cost == 0.0:
-            #     break # done!
+        print(".", end="", flush=True)
+        if current_cost < best_cost:
+            best_circuit = current_circuit
+            best_cost = current_cost
+        # if best_cost == 0.0:
+        #     break # done!
+
 
     print("done")
     print(f"best circuit: {[(str(g), i) for g, i in best_circuit]} with cost {best_cost}")
