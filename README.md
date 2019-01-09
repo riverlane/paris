@@ -3,8 +3,8 @@
 The challenge is to create quantum circuits to classify a provided basket of states into of the Schroedinger's cat classes: ALIVE or DEAD.
 
 tools in this repo include
-- example_solutions.py, inefficient example solutions for the problems we set.
-- problem_spec_script.py, a tool for creating the problem sets
+- example_solutions, inefficient example solutions for the problems we set.
+- generate.py, a tool for creating the problem sets
 - evaluate.py, a tool for grading your solutions on accuracy and time.
 
 ### Installation
@@ -18,9 +18,9 @@ pip install --user projectq sklearn
 
 Read through the first and second parts of example_solutions.py. In the first session of the day we will prepare your computers and walk through problem D0. The first function `problemzero_example_train` is related to this.
 
-Next you will be free to attempt the discrete and continuous problem sets. We recommend starting with the `train_discrete_general_example` and `TODO` functions.
+Next you will be free to attempt the discrete and continuous problem sets. We recommend starting with the `example_general_discrete_problem_training` and `TODO` functions.
 
-In order to test your solutions, use `evaluate.py`. A example use is `./evaluate.py --fun train_discrete_general_example --stats --problem problem1 --n 4`. This runs your function `train_discrete_general_example` on problem 1, using 4 vectors for the training set.
+In order to test your solutions, use `evaluate.py`. A example use is `./evaluate.py --fun example_general_discrete_problem_training --stats --problem problem1 --n 4`. This runs your function `example_general_discrete_problem_training` on problem 1, using 4 vectors for the training set.
 
 If you use the non-quantum solutions like `train_svm` you may want to use more training examples. the parameter `--n` controls this.
 

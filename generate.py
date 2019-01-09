@@ -118,6 +118,7 @@ D_problem_0 = {
 
     # For us: what measurement should be taken. The classical one is a map from a bitstr basis state to the observable
     "QuantumMeasurement":"Z0",
+    "TimeEst":0,
 
     # This stuff should be displyed where the participants can see it.
     "Hint":"""This is the single qubit problem we walked through at the start of the hackathon.
@@ -126,6 +127,9 @@ We showed that by applying a Hadamard gate we go back to just one of the states.
 """
 }
 
+if 0 in args.problems:
+    D_problem_0 = add_samples(D_problem_0)
+    print("done 0")
 
 D_problem_1 = {
     "Name":"problem1",

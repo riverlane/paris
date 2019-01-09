@@ -22,7 +22,7 @@ def example_general_discrete_problem_training(training_data):
     allowable_gates = \
         [lambda circ, qreg: circ.h(qreg[i]) for i in range(num_qubits)] + \
         [lambda circ, qreg: circ.x(qreg[i]) for i in range(num_qubits)] + \
-        [lambda circ, qreg: circ.cnot(qreg[i:i+1]) for i in range(num_qubits - 1)]
+        [lambda circ, qreg: circ.cx(qreg[i], qreg[i+1]) for i in range(num_qubits - 1)]
 
     print([gfun for gfun in allowable_gates])
 
