@@ -100,7 +100,8 @@ def add_samples(problem):
                                                                                 circuit=problem["U"])
     problem["TestVectors"], problem["TestLabels"] = generate_basis_vectors(NQ=problem["NumQubits"],
                                                                            circuit=problem["U"])
-    problem["QuantumMeasurement"] = ops.QubitOperator(" ".join([f"Z{i}" for i in range(problem["NumQubits"])])),
+    #problem["QuantumMeasurement"] = ops.QubitOperator(" ".join([f"Z{i}" for i in range(problem["NumQubits"])])),
+    problem["QuantumMeasurement"] = " ".join(f"Z{i}" for i in range(problem["NumQubits"]))
     return problem
 
 
@@ -116,7 +117,7 @@ D_problem_0 = {
     "TrainLabels":[1, -1],
 
     # For us: what measurement should be taken. The classical one is a map from a bitstr basis state to the observable
-    "QuantumMeasurement":ops.QubitOperator("Z0"),
+    "QuantumMeasurement":"Z0",
 
     # This stuff should be displyed where the participants can see it.
     "Hint":"""This is the single qubit problem we walked through at the start of the hackathon.
@@ -311,6 +312,7 @@ def save_train_data(problem):
 problems = [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4, C_problem_5]
 for pi in args.problems:
     problems[pi]["U"] = None
+    problems[pi]["Udag"] = None
     save_train_data(problems[pi])
 
 
