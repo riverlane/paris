@@ -66,4 +66,4 @@ for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
 
 print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
 if dt > problem["TimeEst"]:
-    print(f"It took more than {problem['TimeEst']} to train your solution - we are sure there is a better method!")
+    print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
