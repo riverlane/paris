@@ -78,7 +78,7 @@ def example_general_discrete_problem_training(training_data):
 
             current_cost += abs(train_label - prediction)
             print(f"ground truth: {train_label}")
-            print(f"prediction:   {prediction}")
+            print(f"prediction: {prediction}")
             print(f"difference: {train_label - prediction}")
             print()
 
@@ -93,6 +93,7 @@ def example_general_discrete_problem_training(training_data):
 
 
     print("done")
+    print("")
     print(f"best circuit: {labelled_combinations[best_index]} with cost {best_cost}")
 
     # now we create the inference function. This should take a state and produce a prediction.
