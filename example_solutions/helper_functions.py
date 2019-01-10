@@ -13,7 +13,7 @@ def compute_parity_exp_value(state_vector):
     for idx, coeff in enumerate(state_vector):
         exp += coeff * coeff.conj() * (1 if parity_of(idx) == 0 else -1)
 
-    exp = 1 if exp > 0 else -1 # clip to the labels. this may be not what you want for cont. optimisation.
+    # exp = 1 if exp > 0 else -1 # clip to the labels. this may be not what you want for cont. optimisation.
     return exp
 
 def generic_infer(best_circuit, wavefunction):
@@ -40,42 +40,59 @@ def infererance_retval(infer_fun = None, infer_circ = None, discription = None,
     return {"infer_fun":infer_fun, "infer_circ":infer_circ, "discription":discription,
             "train_best_accuracy":train_accuracy}
 
+class Mock(object):
+
+    def __init__(self, calllist=None, path=None):
+        self.calls = calllist if calllist is not None else []
+        self.priors = path if path is not None else []
+
+    def __getattr__(self, name):
+        #print(self.priors, ("getattr", name))
+
+        self.calls.append(self.priors + [("getattr", name)])
+        return Mock(self.calls, self.priors+[("getattr", name)])
+
+    def __getitem__(self, slice):
+        #print(self.priors, ("getitem", slice))
+
+        self.calls.append(self.priors + [("getitem", slice)])
+        return Mock(self.calls, self.priors+[("getitem", slice)])
+
+    def __call__(self, *args, **kwargs):
+        #print(self.priors, ("call", args, kwargs))
+
+        self.calls.append(self.priors + [("call", args, kwargs)])
+        return Mock(self.calls, self.priors+[("call", args, kwargs)])
+
+
+
 def gate_repr(f):
     """Extracts a qiskit gate application from a lambda function.
 
-    returns: sttring repr of the gate.
+    returns: string repr of the gate.
     """
-    gate_arity = None
-    gate_name = None
-    gate_args = []
-    gate_qubits = []
+    circ = Mock()
+    qreg = Mock()
+    try:
+        f(circ, qreg)
+    except TypeError:
+        # if there are global var lookups in f, we try to concrelty eval
+        # it... does not work. so we need the qubit indices to be bound
+        return "? unbound qubit indices"
+    # print(circ.calls)
+    # print(qreg.calls)
+    # just works for a single gate.
+    gate = circ.calls[-1][0][1] # indexes get the deepest call, root, name.
+    # gate_args = [[a for a in args if type(a) != Mock]
+    #              for name, args, kwargs in circ.calls[-1][-1]]
+    g_name, g_args, g_kwargs = circ.calls[-1][-1]
+    g_args = [a for a in g_args if type(a) != Mock]
+    qubit_indices = [idxop[0][1] for idxop in qreg.calls]
 
-    # get the gate name.
-    for i in dis.get_instructions(f):
-        if gate_name is None and i.opname == "LOAD_ATTR":
-            gate_name = i.argval
-            break
-
-    # get qubit args: space bwteen LOAD_FAST qreg and BINARY_SUBSCR is the index.
-    state = 0 # outside indexing
-    index_expr = None
-    for i in dis.get_instructions(f):
-        if state == 0 and i.argrepr == "qreg":
-            state = 1 # in the index part
-            index_expr = []
-
-        if state == 1 and i.opname in ["LOAD_GLOBAL", "LOAD_FAST", "LOAD_CONST"]:
-            index_expr.append(i.argrepr)
-
-        if state == 1 and i.opname == "BINARY_ADD": # add the last 2 elements.
-            index_expr = index_expr[:-2] + [(index_expr[-2] + "+" + index_expr[-1])]
-
-        if state == 1 and i.opname == "BINARY_SUBSCR":
-            # end of index expr.
-            gate_qubits.append(" ".join(index_expr))
-            state = 0
-
-    return f"{gate_name}({gate_qubits})"
+    #return gate, g_args, qubit_indices
+    arg_str = "(" + ", ".join(g_args) + ")" if g_args else ""
+    idx_str = ", ".join(map(str, qubit_indices))
+    return f"{gate}{arg_str}[{idx_str}]"
 
 def print_circuit(circ, num_qubits):
 

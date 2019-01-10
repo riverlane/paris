@@ -70,7 +70,7 @@ def example_general_discrete_problem_training(training_data):
 
             current_cost += abs(train_label - prediction)
 
-        print(f"For circuit {' '.join(map(gate_repr, current_circuit))}, training loss was {current_cost}.")
+        print(f"For circuit {' -> '.join(gate_repr(g) for g in current_circuit)}, training loss was {current_cost}.")
         if current_cost < best_cost:
             best_circuit = current_circuit
             best_cost = current_cost
