@@ -61,7 +61,7 @@ dt = time.time() - t0
 predictfn = trained_result["infer_fun"]
 
 if not callable(predictfn):
-    print("Your training function needs to return a dict from infererance_retval!")
+    print("Your training function needs to return a dict from inferance_retval!")
     sys.exit(0)
 
 cost = 0.0
@@ -78,27 +78,33 @@ accuracy_percentage = cost/len(problem["TestVectors"]) * 100
 try:
     source = inspect.getsource(proposed_solution)
 except exception as e:
-    print("failed to get source code for solution.")
+    print("failed to get source code for solution!")
     print(traceback.format_exc())
     source = None
 
-result_dict = {"cost":cost, "circuit":str(trained_result["infer_circ"]),
-               "test_accuracy":accuracy_percentage,
-               "sourcecode":source}
+result_dict = {
+    "problem":args.problem,
+    "cost":cost,
+    "circuit":str(trained_result["infer_circ"]),
+    "test_accuracy":accuracy_percentage,
+    "source_code":source
+}
 
 
 time_str = datetime.datetime.utcfromtimestamp(time.time()).strftime('%H:%M')
 accuracy_str = f"{accuracy_percentage}"
 
 i = 0
-while os.path.exists(f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"):
+while os.path.exists(f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"):
     i += 1
-fname = f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"
+fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
+print(f"Error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
+
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
-print(f"run saved to {fname}. Upload with ck upload ...")
+
+print(f"Run saved to {fname}. Upload with ck upload ...")
