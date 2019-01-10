@@ -1,4 +1,4 @@
-from .helper_functions import compute_parity_exp_value, infererance_retval
+from .helper_functions import compute_parity_exp_value, infererance_retval, print_circuit, gate_repr
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 import itertools
 import numpy as np
@@ -20,14 +20,13 @@ def example_general_discrete_problem_training(training_data):
     # We need this as gates are methods on the circuits rather than independent objects in qiskit.
     # FORMAT: lambda qiskit gate specification, string description of gate/qubit
     allowable_gates = \
-        [(lambda circ, qreg: circ.h(qreg[i]), "".join(f"H{i}")) for i in range(num_qubits)] + \
-        [(lambda circ, qreg: circ.x(qreg[i]), "".join(f"X{i}")) for i in range(num_qubits)] + \
-        [(lambda circ, qreg:
-          circ.cx(qreg[i], qreg[i+1]), "".join(f"CNOT({i}, {i+1})")) for i in range(num_qubits - 1)]
+        [lambda circ, qreg: circ.h(qreg[i]) for i in range(num_qubits)] + \
+        [lambda circ, qreg: circ.x(qreg[i]) for i in range(num_qubits)] + \
+        [lambda circ, qreg: circ.cx(qreg[i], qreg[i+1]) for i in range(num_qubits - 1)]
 
 
-    print("Gate set:")
-    print([gfun[1] for gfun in allowable_gates])
+    # print("Gate set:")
+    # print([gfun for gfun in allowable_gates])
 
     max_length = num_qubits * 2 # the total number of gates to consider
     print(f"Maximum gate depth {max_length}")
@@ -36,18 +35,12 @@ def example_general_discrete_problem_training(training_data):
     # for example, 2 gates on 2 different qubits can be exchanged.
     # this is not considered here.
     possible_circuits = itertools.chain(*[
-                        itertools.permutations((gates[0] for gates in allowable_gates), r=NG)
-                        for NG in range(max_length+1)
-                       ])
-    labelled_combinations = itertools.chain(*[
-                        itertools.permutations((gates[1] for gates in allowable_gates), r=NG)
+                        itertools.permutations((gates for gates in allowable_gates), r=NG)
                         for NG in range(max_length+1)
                        ])
 
     possible_circuits = list(possible_circuits)
     print(f"Number of possible circuits to consider: {len(possible_circuits)}")
-    labelled_combinations = list(labelled_combinations)
-    print(labelled_combinations)
 
     # if you want to print all the attempts, this can help:
     # for p in possible_circuits:
@@ -77,7 +70,7 @@ def example_general_discrete_problem_training(training_data):
 
             current_cost += abs(train_label - prediction)
 
-        print(f"For circuit {current_circuit}, training loss was {current_cost}.")
+        print(f"For circuit {' '.join(map(gate_repr, current_circuit))}, training loss was {current_cost}.")
         if current_cost < best_cost:
             best_circuit = current_circuit
             best_cost = current_cost
@@ -88,7 +81,9 @@ def example_general_discrete_problem_training(training_data):
 
 
     print("done")
-    print(f"best circuit: {labelled_combinations[best_index]} with cost {best_cost}")
+    print(f"best circuit:")
+    print(print_circuit(best_circuit, num_qubits))
+    print(f"with cost {best_cost}")
 
     # now we create the inference function. This should take a state and produce a prediction.
     def infer(wavefunction):

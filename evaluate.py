@@ -7,8 +7,11 @@ import time
 import datetime
 import json
 import inspect
+import traceback
+import numpy as np
 
 import example_solutions as trialmodule
+from example_solutions.helper_functions import print_circuit
 
 parser = argparse.ArgumentParser(description='Tests your solutions for the quantum classification problem.')
 parser.add_argument('--solution_function_name', "--fun", metavar='S', type=str,
@@ -77,12 +80,20 @@ accuracy_percentage = cost/len(problem["TestVectors"]) * 100
 
 try:
     source = inspect.getsource(proposed_solution)
-except exception as e:
+except Exception as e:
     print("failed to get source code for solution.")
     print(traceback.format_exc())
     source = None
 
+try:
+    circuit_str = print_circuit(trained_result["infer_circ"], num_qubits = int(np.log2(len(problem["TestVectors"][0]))) )
+except Exception:
+    print("drawing circuit failed.")
+    print(traceback.format_exc())
+    circuit_str = "Not available"
+
 result_dict = {"cost":cost, "circuit":str(trained_result["infer_circ"]),
+               "circuit_str":circuit_str,
                "test_accuracy":accuracy_percentage,
                "sourcecode":source}
 
@@ -96,7 +107,7 @@ while os.path.exists(f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.j
 fname = f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"
 
 with open(fname, "w") as f:
-    json.dump(result_dict, f)
+    json.dump(result_dict, f, )
 
 print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
 if dt > problem["TimeEst"]:
