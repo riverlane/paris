@@ -96,7 +96,7 @@ while os.path.exists(f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.j
 fname = f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"
 
 with open(fname, "w") as f:
-    json.dump(result_dict, f)
+    json.dump(result_dict, f, indent=4)
 
 print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
 if dt > problem["TimeEst"]:
