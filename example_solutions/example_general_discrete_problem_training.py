@@ -23,7 +23,7 @@ def example_general_discrete_problem_training(training_data):
         [(lambda circ, qreg: circ.h(qreg[i]), "".join(f"H{i}")) for i in range(num_qubits)] + \
         [(lambda circ, qreg: circ.x(qreg[i]), "".join(f"X{i}")) for i in range(num_qubits)] + \
         [(lambda circ, qreg:
-          circ.cx(qreg[i], qreg[i+1]), "".join(f"CNOT({i}, {i+1}")) for i in range(num_qubits - 1)]
+          circ.cx(qreg[i], qreg[i+1]), "".join(f"CNOT({i}, {i+1})")) for i in range(num_qubits - 1)]
 
 
     print("Gate set:")
