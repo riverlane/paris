@@ -10,6 +10,7 @@ def compute_parity_exp_value(state_vector):
     for idx, coeff in enumerate(state_vector):
         exp += coeff * coeff.conj() * (1 if parity_of(idx) == 0 else -1)
 
+    exp = 1 if exp > 0 else -1 # clip to the labels. this may be not what you want for cont. optimisation.
     return exp
 
 def generic_infer(best_circuit, wavefunction):

@@ -73,16 +73,11 @@ def example_general_discrete_problem_training(training_data):
             opts = {"initial_statevector": train_vector}
             execution = execute(circ, simulator, backend_options=opts)
             result = execution.result()
-            print(f"vector: {result.get_statevector(circ)}")
             prediction = compute_parity_exp_value(result.get_statevector(circ))
 
             current_cost += abs(train_label - prediction)
-            print(f"ground truth: {train_label}")
-            print(f"prediction:   {prediction}")
-            print(f"difference: {train_label - prediction}")
-            print()
 
-        # print(".", end="", flush=True)
+        print(f"For circuit {current_circuit}, training loss was {current_cost}.")
         if current_cost < best_cost:
             best_circuit = current_circuit
             best_cost = current_cost
