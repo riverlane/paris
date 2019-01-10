@@ -1,8 +1,13 @@
-#! python3
+#! /usr/bin/env python3
 import argparse
 import pickle
 import sys
+import os
 import time
+import datetime
+import json
+import inspect
+
 import example_solutions as trialmodule
 
 parser = argparse.ArgumentParser(description='Tests your solutions for the quantum classification problem.')
@@ -13,7 +18,7 @@ parser.add_argument('--print_problem_stats', "--stats", action='store_true',
 parser.add_argument('--cheat', action='store_true',
                     help='Prints the transformation circuit. DEBUG ONLY.')
 parser.add_argument('--problem', dest='problem', action='store',
-                    default="problem3",
+                    default="problem0",
                     help='Name of the problem to test against.')
 parser.add_argument('--sample_limit', "--n", action='store',
                     default="-1", type=int,
@@ -50,11 +55,13 @@ t0 = time.time()
 traindata = zip(problem["TrainSamples"], problem["TrainLabels"]) if args.sample_limit < 0 else \
             list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:args.sample_limit]
 traindata = list(traindata)
-predictfn = proposed_solution( traindata )
+trained_result = proposed_solution( traindata )
 dt = time.time() - t0
 
+predictfn = trained_result["infer_fun"]
+
 if not callable(predictfn):
-    print("Your training function needs to return a callable classification function!")
+    print("Your training function needs to return a dict from infererance_retval!")
     sys.exit(0)
 
 cost = 0.0
@@ -63,7 +70,35 @@ for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     cost += abs(p-testres)
     # if abs(p-testres) > 0.0001:
     #     print(p, testres, testvec)
+accuracy_percentage = cost/len(problem["TestVectors"]) * 100
+
+## Now we have evaluated the users solution, we need to package up as much metadata
+## as possible for later grading.
+
+try:
+    source = inspect.getsource(proposed_solution)
+except exception as e:
+    print("failed to get source code for solution.")
+    print(traceback.format_exc())
+    source = None
+
+result_dict = {"cost":cost, "circuit":str(trained_result["infer_circ"]),
+               "test_accuracy":accuracy_percentage,
+               "sourcecode":source}
+
+
+time_str = datetime.datetime.utcfromtimestamp(time.time()).strftime('%H:%M')
+accuracy_str = f"{accuracy_percentage}"
+
+i = 0
+while os.path.exists(f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"):
+    i += 1
+fname = f"{args.problem}_{time_str}_{accuracy_percentage:.2f}_{i}.json"
+
+with open(fname, "w") as f:
+    json.dump(result_dict, f)
 
 print(f"error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
+print(f"run saved to {fname}. Upload with ck upload ...")

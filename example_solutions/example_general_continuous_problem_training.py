@@ -1,4 +1,4 @@
-from .helper_functions import compute_parity_exp_value
+from .helper_functions import compute_parity_exp_value, infererance_retval
 from functools import partial
 from scipy.optimize import minimize
 import numpy as np
@@ -93,4 +93,4 @@ def example_general_continuous_problem_training(training_data):
         else:
             return 1
 
-    return infer
+    return infererance_retval(infer)

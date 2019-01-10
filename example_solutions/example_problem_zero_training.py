@@ -1,4 +1,4 @@
-from .helper_functions import compute_parity_exp_value
+from .helper_functions import compute_parity_exp_value, infererance_retval
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
 def example_problem_zero_training(training_data):
@@ -23,4 +23,4 @@ def example_problem_zero_training(training_data):
 
         return exp_val
 
-    return infer
+    return infererance_retval(infer_fun = infer)
