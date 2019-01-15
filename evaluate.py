@@ -100,7 +100,7 @@ result_dict = {
     "training_vectors_limit":args.sample_limit,
     "solution_function_name":args.solution_function_name,
     "source_code":source,
-    "solution_error":test_error,
+    "test_error":test_error,
     "training_time":dt,
     "test_accuracy":accuracy_percentage,
 
