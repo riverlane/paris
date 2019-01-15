@@ -64,7 +64,7 @@ dt = time.time() - t0
 predictfn = trained_result["infer_fun"]
 
 if not callable(predictfn):
-    print("Your training function needs to return a dict from inferance_retval!")
+    print("Your training function needs to return a dict from inference_retval!")
     sys.exit(0)
 
 cost = 0.0
@@ -92,14 +92,21 @@ except Exception:
     print(traceback.format_exc())
     circuit_str = None
 
+problem_name    = args.problem
+problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
 
 result_dict = {
-    "problem":args.problem,
-    "cost":cost,
-    "circuit":str(trained_result["infer_circ"]),
-    "circuit_str":circuit_str,
+    "problem_index":problem_index,
+
+    "training_vectors_limit":args.sample_limit,
+    "solution_function_name":args.solution_function_name,
+    "source_code":source,
+    "solution_error":cost,
+    "training_time":dt,
     "test_accuracy":accuracy_percentage,
-    "source_code":source
+
+#    "circuit":str(trained_result["infer_circ"]),
+    "circuit_str":circuit_str,
 }
 
 
@@ -114,7 +121,7 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"Error in your solution was {cost:.5f}, taking {dt:.2e} seconds to train.")
+print(f"Error in your solution was {cost:.5f}, taking {dt:.1f} seconds to train.")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
