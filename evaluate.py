@@ -42,9 +42,8 @@ if args.print_problem_stats:
     print(f"Training ETA: {problem['TimeEst']}")
 
 if args.cheat:
-    print("Problem circuit:")
-    for gate, bit in problem['U']:
-        print(str(gate), "|", bit)
+    from pprint import pprint
+    pprint(problem)
 
 if args.solution_function_name is None:
     print("Please provide the name of your proposed solution function as --fun [NAME] to evaluate. exiting.")
