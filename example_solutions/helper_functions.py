@@ -94,16 +94,19 @@ def gate_repr(f):
     idx_str = ", ".join(map(str, qubit_indices))
     return f"{gate}{arg_str}[{idx_str}]"
 
-def print_circuit(circ, num_qubits):
 
-    simulator = BasicAer.get_backend('statevector_simulator')
-    qr = QuantumRegister(num_qubits, "qr")
-    circ = QuantumCircuit(qr)
+def print_circuit(current_circuit, num_qubits):
 
-    if len(circ) == 0:
-        circ.iden(qr)
+    if isinstance(current_circuit, tuple):
+        qr = QuantumRegister(num_qubits, "qr")
+        circ = QuantumCircuit(qr)
+
+        if len(current_circuit) == 0:
+            circ.iden(qr)
+        else:
+            for gate_application_function in current_circuit:
+                gate_application_function(circ, qr)
     else:
-        for gate_application_function in current_circuit:
-            gate_application_function(circ, qr)
+        circ = current_circuit
 
     return circ.draw().single_string()
