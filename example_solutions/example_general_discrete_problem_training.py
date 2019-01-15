@@ -83,7 +83,7 @@ def example_general_discrete_problem_training(training_data):
     print("done")
     print(f"best circuit:")
     print(print_circuit(best_circuit, num_qubits))
-    print(f"with cost {best_cost}")
+    print(f"with training_error {best_cost}")
 
     # now we create the inference function. This should take a state and produce a prediction.
     def infer(wavefunction):

@@ -66,13 +66,13 @@ if not callable(predictfn):
     print("Your training function needs to return a dict from inference_retval!")
     sys.exit(0)
 
-cost = 0.0
+test_error = 0.0
 for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     p = predictfn(testvec)
-    cost += abs(p-testres)
+    test_error += abs(p-testres)
     # if abs(p-testres) > 0.0001:
     #     print(p, testres, testvec)
-accuracy_percentage = cost/len(problem["TestVectors"]) * 100
+accuracy_percentage = test_error/len(problem["TestVectors"]) * 100
 
 ## Now we have evaluated the users solution, we need to package up as much metadata
 ## as possible for later grading.
@@ -100,7 +100,7 @@ result_dict = {
     "training_vectors_limit":args.sample_limit,
     "solution_function_name":args.solution_function_name,
     "source_code":source,
-    "solution_error":cost,
+    "solution_error":test_error,
     "training_time":dt,
     "test_accuracy":accuracy_percentage,
 
@@ -120,7 +120,7 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"Error in your solution was {cost:.5f}, taking {dt:.1f} seconds to train.")
+print(f"Error in your solution was {test_error:.5f}, taking {dt:.1f} seconds to train.")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
