@@ -32,13 +32,13 @@ def generic_infer(best_circuit, wavefunction):
     return result
 
 # alternative: defaultdict and .update() - but this is less self documenting.
-def infererance_retval(infer_fun = None, infer_circ = None, discription = None,
+def infererance_retval(infer_fun = None, infer_circ = None, discription = None, training_error = None,
                        train_accuracy = None):
     if infer_circ is not None and infer_fun is None:
         infer_fun = functools.partial(generic_infer, infer_circ)
 
     return {"infer_fun":infer_fun, "infer_circ":infer_circ, "discription":discription,
-            "train_best_accuracy":train_accuracy}
+            "training_error": training_error, "train_best_accuracy":train_accuracy}
 
 class Mock(object):
 

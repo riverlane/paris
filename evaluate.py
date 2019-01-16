@@ -93,19 +93,21 @@ except Exception:
 
 problem_name    = args.problem
 problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
+training_error  = trained_result["training_error"]
 
 result_dict = {
+    "problem_name":problem_name,
     "problem_index":problem_index,
 
     "training_vectors_limit":args.sample_limit,
     "solution_function_name":args.solution_function_name,
     "source_code":source,
-    "test_error":test_error,
-    "training_time":dt,
-    "test_accuracy":accuracy_percentage,
-
-#    "circuit":str(trained_result["infer_circ"]),
     "circuit_str":circuit_str,
+    "training_time":dt,
+    "training_error":training_error,
+
+    "test_accuracy":accuracy_percentage,
+    "test_error":test_error,
 }
 
 
@@ -120,7 +122,7 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"Error in your solution was {test_error:.5f}, taking {dt:.1f} seconds to train.")
+print(f"Training error: {training_error:.2f}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
