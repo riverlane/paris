@@ -1,16 +1,22 @@
-from .helper_functions import compute_parity_exp_value, infererance_retval
+from .helper_functions import compute_parity_exp_value, infererance_retval, print_circuit
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
 def example_problem_zero_training(training_data):
     # we ignore the training data as we will look at it by hand!
-    print(training_data)
+    print("Training data:")
+    for training_vec in training_data:
+        print("\t{}".format(training_vec))
 
-    qr = QuantumRegister(1, "qr")
+    num_qubits = 1
+    qr = QuantumRegister(num_qubits, "qr")
     circ = QuantumCircuit(qr)
 
     # you will modify this line as part of the first session of the day.
     # note that H is self-inverse (like a classical NOT): H^-1 == H.
     circ.h(qr[0])
+
+    print("Trying the following circuit:")
+    print(print_circuit(circ, num_qubits))
 
     def infer(wavefunction):
 
