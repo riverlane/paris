@@ -19,32 +19,36 @@ def example_general_discrete_problem_training(training_data):
     # A "gate" is a function that takes the circuit and qreg (created later)
     # We need this as gates are methods on the circuits rather than independent objects in qiskit.
     # FORMAT: lambda qiskit gate specification, string description of gate/qubit
-    allowable_gates = \
-        [lambda circ, qreg: circ.h(qreg[i]) for i in range(num_qubits)] + \
-        [lambda circ, qreg: circ.x(qreg[i]) for i in range(num_qubits)] + \
-        [lambda circ, qreg: circ.cx(qreg[i], qreg[i+1]) for i in range(num_qubits - 1)]
+    allowable_gates = []
+    for i in range(num_qubits):
+        allowable_gates.extend([
+            lambda circ, qreg, i=i: circ.h(qreg[i]),
+            lambda circ, qreg, i=i: circ.x(qreg[i]),
+            lambda circ, qreg, i=i: circ.cx(qreg[i], qreg[(i+1) % num_qubits]),
+        ])
+    print('-' * 80)
+    print("Allowable gates:")
+    for current_gate in allowable_gates:
+        q = QuantumRegister(num_qubits, "q")
+        c = QuantumCircuit(q)
+        current_gate(c, q)
+        print(print_circuit(c,num_qubits))
+    print('-' * 80)
 
-
-    # print("Gate set:")
-    # print([gfun for gfun in allowable_gates])
-
-    max_length = num_qubits * 2 # the total number of gates to consider
-    print(f"Maximum gate depth {max_length}")
+    max_depth = num_qubits * 2 # the total number of gates to consider
+    print(f"Maximum gate depth {max_depth}")
 
     # NOTE: some gates are not affected by ordering!
     # for example, 2 gates on 2 different qubits can be exchanged.
     # this is not considered here.
     possible_circuits = itertools.chain(*[
                         itertools.permutations((gates for gates in allowable_gates), r=NG)
-                        for NG in range(max_length+1)
+                        for NG in range(max_depth+1)
                        ])
 
     possible_circuits = list(possible_circuits)
     print(f"Number of possible circuits to consider: {len(possible_circuits)}")
 
-    # if you want to print all the attempts, this can help:
-    # for p in possible_circuits:
-    #     print([(str(g), i) for g, i in p])
 
     best_cost = float('Inf')
     best_circuit = None
@@ -78,7 +82,6 @@ def example_general_discrete_problem_training(training_data):
         # if best_cost == 0.0:
         #     break # done!
         index += 1
-
 
     print("done")
     print(f"best circuit:")
