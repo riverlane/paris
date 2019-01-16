@@ -122,7 +122,8 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"Training error: {training_error:.2f}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
+training_error_str = "{:.2f}".format(training_error) if isinstance(training_error, float) else 'Unknown'
+print(f"Training error: {training_error_str}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
