@@ -94,6 +94,8 @@ except Exception:
 problem_name    = args.problem
 problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
 training_error  = trained_result["training_error"]
+if training_error == None:
+    training_error = -1
 
 result_dict = {
     "problem_name":problem_name,
@@ -122,8 +124,7 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-training_error_str = "{:.2f}".format(training_error) if isinstance(training_error, float) else 'Unknown'
-print(f"Training error: {training_error_str}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
+print(f"Training error: {training_error:.2f}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
