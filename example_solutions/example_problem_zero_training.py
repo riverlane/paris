@@ -1,6 +1,7 @@
 from .helper_functions import compute_parity_exp_value, infererance_retval, print_circuit
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
+
 def example_problem_zero_training(training_data):
     # we ignore the training data as we will look at it by hand!
     print("Training data:")
@@ -16,27 +17,23 @@ def example_problem_zero_training(training_data):
     # note that H is self-inverse (like a classical NOT): H^-1 == H.
     circ.h(qr[0])
 
-    print("Trying the following circuit:")
+    print("Trying the following hand-built circuit:")
     print(print_circuit(circ, num_qubits))
+
+
+    def infer(input_vector):
+        execution_result = execute(circ, simulator, backend_options={"initial_statevector": input_vector}).result()
+        prediction = compute_parity_exp_value(execution_result.get_statevector(circ))
+        return prediction
+
 
     ## Assessing performance on the training set:
     #
     training_error = 0.0
     for train_vector, train_label in training_data:
-        execution_result = execute(circ, simulator, backend_options={"initial_statevector": train_vector}).result()
-        prediction = compute_parity_exp_value(execution_result.get_statevector(circ))
+        prediction = infer(train_vector)
+        print('"Prediction" for a training example: {}'.format(prediction))
         training_error += abs(train_label - prediction)
-
-
-    def infer(wavefunction):
-
-        execution_result = execute(circ, simulator, backend_options={"initial_statevector": wavefunction}).result()
-        prediction = compute_parity_exp_value(execution_result.get_statevector(circ))
-
-        print('Prediction: {}'.format(prediction))
-
-        return prediction
-
 
     return infererance_retval(
             infer_fun = infer,
