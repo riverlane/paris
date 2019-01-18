@@ -84,11 +84,11 @@ except Exception as e:
     print(traceback.format_exc())
     source = None
 
-try:
-    circuit_str = print_circuit(trained_result["infer_circ"], num_qubits = int(np.log2(len(problem["TestVectors"][0]))) )
-except Exception:
-    print("drawing circuit failed.")
-    print(traceback.format_exc())
+circuit = trained_result["infer_circ"]
+if circuit:
+    circuit_str = print_circuit(circuit, num_qubits = int(np.log2(len(problem["TestVectors"][0]))) )
+else:
+    print("No circuit is available for this solution")
     circuit_str = None
 
 problem_name    = args.problem
