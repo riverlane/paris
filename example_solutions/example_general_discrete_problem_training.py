@@ -24,8 +24,11 @@ def example_general_discrete_problem_training(training_data):
         allowable_gates.extend([
             lambda circ, qreg, i=i: circ.h(qreg[i]),
             lambda circ, qreg, i=i: circ.x(qreg[i]),
-            lambda circ, qreg, i=i: circ.cx(qreg[i], qreg[(i+1) % num_qubits]),
         ])
+        if num_qubits>1:
+            allowable_gates.append(
+                lambda circ, qreg, i=i: circ.cx(qreg[i], qreg[(i+1) % num_qubits]),
+            )
     print('-' * 80)
     print("Allowable gates:")
     for current_gate in allowable_gates:
