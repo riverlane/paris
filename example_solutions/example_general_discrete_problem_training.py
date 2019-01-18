@@ -56,20 +56,21 @@ def example_general_discrete_problem_training(training_data):
     best_cost = float('Inf')
     best_circuit = None
     index = 0
+    simulator = BasicAer.get_backend('statevector_simulator')
+
     for current_circuit in possible_circuits:
+
         current_cost = 0
+        qr = QuantumRegister(num_qubits, "qr")
+        circ = QuantumCircuit(qr)
+
+        if len(current_circuit) == 0:
+            circ.iden(qr)
+        else:
+            for gate_application_function in current_circuit:
+                gate_application_function(circ, qr)
+
         for train_vector, train_label in training_data:
-
-            simulator = BasicAer.get_backend('statevector_simulator')
-            qr = QuantumRegister(num_qubits, "qr")
-            circ = QuantumCircuit(qr)
-
-            if len(current_circuit) == 0:
-                circ.iden(qr)
-            else:
-                for gate_application_function in current_circuit:
-                    gate_application_function(circ, qr)
-
             opts = {"initial_statevector": train_vector}
             execution = execute(circ, simulator, backend_options=opts)
             result = execution.result()
