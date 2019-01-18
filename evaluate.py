@@ -129,4 +129,4 @@ print(f"Training error: {training_error:.2f}, taking {dt:.1f} seconds to train. 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
 
-print(f"Run saved to {fname}.\nUpload with 'ck store_experiment qml --json_file={fname}'")
+print(f"Run saved to {fname}.\nUpload with:\n\tck store_experiment qml --json_file={fname}")
