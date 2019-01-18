@@ -15,9 +15,9 @@ def example_general_discrete_problem_training(training_data):
 
     num_qubits = int(np.log2(len(training_data[0][0]))) # the wavefunction has 2**NQ elements.
 
-    # This is not every gate - you may need to extend this.
-    # A "gate" is a function that takes the circuit and qreg (created later)
-    # We need this as gates are methods on the circuits rather than independent objects in qiskit.
+    # This list does not contain every gate - you may need to extend it.
+    # Here a "gate" is a function that takes the circuit and qreg (created later)
+    # We need this as gates are methods on the circuits rather than independent objects in Qiskit.
     # FORMAT: lambda qiskit gate specification, string description of gate/qubit
     allowable_gates = []
     for i in range(num_qubits):
@@ -52,61 +52,52 @@ def example_general_discrete_problem_training(training_data):
     possible_circuits = list(possible_circuits)
     print(f"Number of possible circuits to consider: {len(possible_circuits)}")
 
-
+    simulator = BasicAer.get_backend('statevector_simulator')
     best_cost = float('Inf')
     best_circuit = None
-    index = 0
-    simulator = BasicAer.get_backend('statevector_simulator')
+    best_circ    = None
 
     for current_circuit in possible_circuits:
 
-        current_cost = 0
+        ## Building a Qiskit circuit from our internal representation:
+        #
         qr = QuantumRegister(num_qubits, "qr")
         circ = QuantumCircuit(qr)
-
         if len(current_circuit) == 0:
             circ.iden(qr)
         else:
             for gate_application_function in current_circuit:
                 gate_application_function(circ, qr)
 
+        ## Assessing performance on the training set:
+        #
+        current_cost = 0.0
         for train_vector, train_label in training_data:
-            opts = {"initial_statevector": train_vector}
-            execution = execute(circ, simulator, backend_options=opts)
-            result = execution.result()
-            prediction = compute_parity_exp_value(result.get_statevector(circ))
-
-            current_cost += abs(train_label - prediction)
-
+            execution_result = execute(circ, simulator, backend_options={"initial_statevector": train_vector}).result()
+            predicted_label = compute_parity_exp_value(execution_result.get_statevector(circ))
+            current_cost += abs(train_label - predicted_label)
         print(f"For circuit {' -> '.join(gate_repr(g) for g in current_circuit)}, training error was {current_cost:.2f}.")
+
         if current_cost < best_cost:
-            best_circuit = current_circuit
-            best_cost = current_cost
-            best_index = index
+            best_circuit    = current_circuit
+            best_circ       = circ
+            best_cost       = current_cost
         # if best_cost == 0.0:
         #     break # done!
-        index += 1
 
-    print("done")
-    print(f"best circuit:")
+    print("Done")
+    print("Best circuit:")
     print(print_circuit(best_circuit, num_qubits))
     print(f"with training_error {best_cost}")
 
-    # now we create the inference function. This should take a state and produce a prediction.
-    def infer(wavefunction):
 
-        simulator = BasicAer.get_backend('statevector_simulator')
-        qr = QuantumRegister(num_qubits, "qr")
-        circ = QuantumCircuit(qr)
+    ## The inference function takes a state and predicts a label:
+    #
+    def infer(input_vector):
+        execution_result = execute(best_circ, simulator, backend_options={"initial_statevector": input_vector}).result()
+        predicted_label = compute_parity_exp_value(execution_result.get_statevector(best_circ))
+        return predicted_label
 
-        for gate in best_circuit:
-            gate(circ, qr)
-
-        opts = {"initial_statevector": wavefunction}
-        result = execute(circ, simulator, backend_options=opts).result()
-        result = compute_parity_exp_value(result.get_statevector(circ))
-
-        return result
 
     return infererance_retval(
             infer_fun = infer,
