@@ -3,7 +3,7 @@ from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 import itertools
 import numpy as np
 
-def example_general_discrete_problem_training(training_data):
+def discrete_solver(training_data):
     """The example training function for the users.
     This is for the discrete problems (staring with D), continuous problems
     have a different train function.

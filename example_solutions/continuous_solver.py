@@ -70,7 +70,7 @@ def prediction(params, num_qubits, depth, vector, simulator):
     return predicted_label
 
 
-def example_general_continuous_problem_training(training_data):
+def continuous_solver(training_data):
 
     simulator = BasicAer.get_backend('statevector_simulator')
 

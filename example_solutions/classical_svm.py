@@ -2,7 +2,7 @@ from .helper_functions import infererance_retval
 from sklearn import svm
 import numpy as np
 
-def example_classical_svm_training(training_example_wfns):
+def classical_svm(training_example_wfns):
     """This is a train function for any circuit ignoring all quantum properties.
     This will work given enough examples, but well be very slow!
     """

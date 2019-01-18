@@ -2,7 +2,7 @@ from .helper_functions import compute_parity_exp_value, infererance_retval, prin
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
 
-def example_problem_zero_training(training_data):
+def manual_solver(training_data):
     # we ignore the training data as we will look at it by hand!
     print("Training data:")
     for training_vec in training_data:
