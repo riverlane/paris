@@ -80,30 +80,19 @@ if not callable(predictfn):
     print("Your training function needs to return a dict from inference_retval!")
     sys.exit(0)
 
-# Calculate training accuracy
-training_accuracy = 0.0
-for trainvec, trainres in list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:sample_limit]:
-    p = predictfn(trainvec)
-    p = 1 if p>0 else -1 # round the result
+def getcost(fn, vectors, labels):
+    acc = 0.0
+    for vec, label in zip(vectors, labels):
+        p = fn(vec)
+        p = 1 if p>0 else -1 # round the result
+        if (p == label):
+            training_accuracy += 1
 
-    if (p == trainres):
-        training_accuracy += 1
+    acc *= 100/len(labels)
 
-training_accuracy *= 100./sample_limit
 
-# Calculate test accuracy
-test_accuracy = 0.0
-for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
-    p = predictfn(trainvec)
-    p = 1 if p>0 else -1 # round the result
-    # if ((p != -1.0) and (p != 1.0)):
-    #     print("Your predictions must be equal to +1 or -1.")
-    #     sys.exit(0)
-
-    if (p == testres):
-        test_accuracy += 1
-
-test_accuracy *= 100./len(problem["TestVectors"])
+training_accuracy = getcost(predictfn, problem["TrainSamples"][:sample_limit], problem["TrainLabels"][:sample_limit])
+test_accuracy = getcost(predictfn, problem["TestVectors"], problem["TestLabels"])
 
 
 #test_error = 0.0
