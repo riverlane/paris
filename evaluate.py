@@ -11,6 +11,7 @@ import os
 import time
 import datetime
 import json
+import re
 import inspect
 import traceback
 import numpy as np
@@ -124,7 +125,8 @@ else:
     circuit_str = None
 
 problem_name    = args.problem
-problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
+match_obj       = re.match('\D+(\d+)', problem_name)
+problem_index   = int(match_obj.group(1)) if match_obj else -1
 
 result_dict = {
     "problem_name":problem_name,
