@@ -84,6 +84,8 @@ if not callable(predictfn):
 training_accuracy = 0.0
 for trainvec, trainres in list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:sample_limit]:
     p = predictfn(trainvec)
+    print(p,trainres)
+
     if ((p != -1.0) and (p != 1.0)):
         print("Your predictions must be equal to +1 or -1.")
         sys.exit(0)
@@ -96,12 +98,13 @@ training_accuracy *= 100./sample_limit
 # Calculate test accuracy
 test_accuracy = 0.0
 for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
-    p = predictfn(trainvec)
-    if ((p != -1.0) and (p != 1.0)):
+    p = predictfn(testvec)
+    if ((p != -1.0) and (p != 1.t0)):
         print("Your predictions must be equal to +1 or -1.")
         sys.exit(0)
 
-    if (p == trainres):
+    print(p, testres)
+    if (p == tesres):
         test_accuracy += 1
 
 test_accuracy *= 100./len(problem["TestVectors"])
