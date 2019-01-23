@@ -124,7 +124,7 @@ else:
     print("No circuit is available for this solution")
     circuit_str = None
 
-problem_name    = args.problem
+problem_name    = args.problem[0:-4] if args.problem.endswith('.pyz') else args.problem
 match_obj       = re.match('\D+(\d+)', problem_name)
 problem_index   = int(match_obj.group(1)) if match_obj else -1
 
