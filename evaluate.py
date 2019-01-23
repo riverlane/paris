@@ -80,6 +80,7 @@ if not callable(predictfn):
     print("Your training function needs to return a dict from inference_retval!")
     sys.exit(0)
 
+
 def getcost(fn, vectors, labels):
     acc = 0.0
     for vec, label in zip(vectors, labels):
