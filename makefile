@@ -7,3 +7,5 @@ CK.zip: *.py *.pyz
 	python problem_spec_script.py --problems $(word 1,$(subst _, ,$@))
 
 test:
+	./evaluate.py --fun discrete_solver --problem discrete_problem0
+	./evaluate.py --fun continuous_solver --problem continuous_problem4 -n 2
