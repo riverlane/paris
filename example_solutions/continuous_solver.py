@@ -74,7 +74,7 @@ def continuous_solver(training_data):
 
     simulator = BasicAer.get_backend('statevector_simulator')
 
-    depth = 0
+    depth = 1
     num_qubits = int(np.log2(len(training_data[0][0])))
 
     # Hardware efficient parameter setup
@@ -96,7 +96,7 @@ def continuous_solver(training_data):
 
         pred = prediction(best_params, num_qubits, depth, vector, simulator)
 
-        if pred < 0.0:
+        if pred <= 0.0:
             return -1
         else:
             return 1
