@@ -311,7 +311,7 @@ the first qubit, and so on. The gates are:
 
 import pickle
 def save_train_data(problem):
-    fname = problem["Name"] + "_spec.pyz"
+    fname = problem["Name"] + ".pyz"
     try:
         del problem["U"]
     except KeyError:

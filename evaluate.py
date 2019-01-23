@@ -33,7 +33,9 @@ parser.add_argument('--sample_limit', "-n", action='store', type=int,
 
 args = parser.parse_args()
 
-with open(args.problem+"_spec.pyz", "rb") as f:
+fname = args.problem if "pyz" in args.problem else args.problem+".pyz"
+
+with open(fname, "rb") as f:
     problem = pickle.load(f)
 
 print("########## Problem hint: ####################")
