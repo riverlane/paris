@@ -106,7 +106,7 @@ def add_samples(problem):
 
 
 D_problem_0 = {
-    "Name":"problem0",
+    "Name":"discrete_problem0",
     "NumQubits":1,
 
     # The (hidden!) permutation gate, and possibly it's inverse? Leave Udag as none if not known
@@ -132,14 +132,14 @@ if 0 in args.problems:
     print("done 0")
 
 D_problem_1 = {
-    "Name":"problem1",
+    "Name":"discrete_problem1",
     "NumQubits":2,
     "U":[(ops.H, 0), (ops.X, 1)], "Udag":[(ops.H, 0), (ops.X, 1)],
     "NSamples":50,
     "TimeEst":5,
     "Hint":"""This your first problem to solve in your groups.
 The circuit consists of only 2 gates! One on each qubit. We promise the gates are only
-from [X, Y, Z, H] - it's your job to work out what ones.
+from [X, H] - it's your job to work out what ones.
 """
 }
 
@@ -148,13 +148,15 @@ if 1 in args.problems:
     print("done 1")
 
 D_problem_2 = {
-    "Name":"problem2",
+    "Name":"discrete_problem2",
     "NumQubits":2,
     "U":[(ops.H, 0), (ops.X, 1), (ops.CNOT, slice(0, 2, 1)), (ops.Y, 1)], "Udag":None,
     "NSamples":500,
     "TimeEst":5,
     "Hint":"""Problem 2: multiple qubit gates. You will need to try interacting
-the qubits with one another.
+the qubits with one another using CNOT gates.
+CNOT gates are only applied to neighbouring qubits.
+Other gates are from [H, X, Y].
 """
 }
 
@@ -163,7 +165,7 @@ if 2 in args.problems:
     print("done 2")
 
 D_problem_3 = {
-    "Name":"problem3",
+    "Name":"discrete_problem3",
     "NumQubits":5,
     "U":[(ops.H, i) for i in range(5)] +
         [(ops.CNOT, slice(i, i+2, 1)) for i in range(4)],
@@ -180,7 +182,7 @@ if 3 in args.problems:
     print(f"done 3 in {time.time()-t0}")
 
 C_problem_4 = {
-    "Name":"problem4",
+    "Name":"continuous_problem4",
     "NumQubits":8,
     "Udag":None,
     "NSamples":500,
@@ -221,12 +223,15 @@ if 4 in args.problems:
 
 
 C_problem_5 = {
-    "Name":"problem5",
+    "Name":"continuous_problem5",
     "NumQubits":4,
     "Udag":None,
     "NSamples":20000,
     "TimeEst":1200,
-    "Hint":"""Continuous problem with 10 qubits.
+    "Hint":"""Continuous problem with 4 qubits.
+This problem is based on a "state preperation circuit" for VQE - used in quantum chemistry.
+The circuit is called the Hardware Efficent Ansatz and you can see it's inverse in continuous_solver.
+You should use the continuous_solver for this and larger continuous problems.
 """
 }
 
@@ -307,16 +312,21 @@ the first qubit, and so on. The gates are:
 import pickle
 def save_train_data(problem):
     fname = problem["Name"] + "_spec.pyz"
+    try:
+        del problem["U"]
+    except KeyError:
+        pass
+
+    try:
+        del problem["Udag"]
+    except KeyError:
+        pass
+
     with open(fname, "wb") as f:
         pickle.dump(problem, f)
-        # writer = csv.writer(f)
-        # for vector, label in zip(problem["TrainSamples"], problem["SampleLabels"]):
-        #     writer.writerow([vector, label])
 
 problems = [D_problem_0, D_problem_1, D_problem_2, D_problem_3, C_problem_4, C_problem_5]
 for pi in args.problems:
-    problems[pi]["U"] = None
-    problems[pi]["Udag"] = None
     save_train_data(problems[pi])
 
 
