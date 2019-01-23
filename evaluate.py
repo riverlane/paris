@@ -86,9 +86,10 @@ def getcost(fn, vectors, labels):
         p = fn(vec)
         p = 1 if p>0 else -1 # round the result
         if (p == label):
-            training_accuracy += 1
+            acc += 1
 
     acc *= 100/len(labels)
+    return acc
 
 
 training_accuracy = getcost(predictfn, problem["TrainSamples"][:sample_limit], problem["TrainLabels"][:sample_limit])
