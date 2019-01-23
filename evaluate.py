@@ -23,8 +23,7 @@ parser.add_argument('--cheat', action='store_true',
 parser.add_argument('--problem', dest='problem', action='store',
                     default="problem0",
                     help='Name of the problem to test against.')
-parser.add_argument('--sample_limit', "--n", action='store',
-                    default="-1", type=int,
+parser.add_argument('--sample_limit', "-n", action='store', type=int,
                     help='Number of training vectors to use - if your solution uses the hints, you can probably make this very small (~10) and train much more quickly.')
 
 args = parser.parse_args()
@@ -41,6 +40,13 @@ if args.print_problem_stats:
     print(f"label bias (sum/number): {sum(problem['TrainLabels']) / len(problem['TrainLabels'])}")
     print(f"Training ETA: {problem['TimeEst']}")
 
+if args.sample_limit is None:
+    sample_limit = min(len(problem['TrainSamples']), 20)
+else:
+    sample_limit = min(len(problem['TrainSamples']), args.sample_limit)
+
+print(f"using {sample_limit} training examples out of {len(problem['TrainSamples'])}. change this with -n NUMBER.")
+
 if args.cheat:
     from pprint import pprint
     pprint(problem)
@@ -54,8 +60,7 @@ proposed_solution = trialmodule.__dict__[args.solution_function_name]
 print(f"using {proposed_solution}")
 
 t0 = time.time()
-traindata = zip(problem["TrainSamples"], problem["TrainLabels"]) if args.sample_limit < 0 else \
-            list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:args.sample_limit]
+traindata = list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:sample_limit]
 traindata = list(traindata)
 trained_result = proposed_solution( traindata )
 dt = time.time() - t0
