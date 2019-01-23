@@ -97,9 +97,10 @@ training_accuracy *= 100./sample_limit
 test_accuracy = 0.0
 for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     p = predictfn(trainvec)
-    if ((p != -1.0) and (p != 1.0)):
-        print("Your predictions must be equal to +1 or -1.")
-        sys.exit(0)
+    p = 1 if p>0 else -1 # round the result
+    # if ((p != -1.0) and (p != 1.0)):
+    #     print("Your predictions must be equal to +1 or -1.")
+    #     sys.exit(0)
 
     if (p == trainres):
         test_accuracy += 1
