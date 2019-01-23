@@ -1,4 +1,9 @@
 #! /usr/bin/env python3
+
+# Qiskit and sklearn have warnings.
+import warnings
+warnings.filterwarnings("ignore")
+
 import argparse
 import pickle
 import sys
@@ -33,6 +38,8 @@ with open(args.problem+"_spec.pyz", "rb") as f:
 
 print("########## Problem hint: ####################")
 print(problem["Hint"], end="")
+if problem["Hint"][-1] != "\n":
+    print()
 print("########## Now running your code ############")
 
 if args.print_problem_stats:
