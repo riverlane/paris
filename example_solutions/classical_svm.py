@@ -1,4 +1,4 @@
-from .helper_functions import infererance_retval
+from .helper_functions import inference_retval
 from sklearn import svm
 import numpy as np
 
@@ -13,11 +13,6 @@ def classical_svm(training_example_wfns):
 
     clf.fit(vecs, actual_labels)
 
-    pred_labels = tuple( clf.predict(vecs) )
-    training_error = 0.0
-    for actual_label, pred_label in zip(actual_labels, pred_labels):
-        training_error += abs(actual_label - pred_label)
-
     # now we create the inference function. This should take a state and produce a prediction.
     def infer(wavefunction):
         wavefunction = np.array(wavefunction).reshape(1, -1)
@@ -27,7 +22,6 @@ def classical_svm(training_example_wfns):
         return test_prediction
 
 
-    return infererance_retval(
-        infer_fun = infer,
-        training_error = training_error
+    return inference_retval(
+        infer_fun = infer
     )

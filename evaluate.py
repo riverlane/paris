@@ -80,13 +80,40 @@ if not callable(predictfn):
     print("Your training function needs to return a dict from inference_retval!")
     sys.exit(0)
 
-test_error = 0.0
+# Calculate training accuracy
+training_accuracy = 0.0
+for trainvec, trainres in zip(problem["TrainSamples"], problem["TrainLabels"])[:sample_limit]:
+    p = predictfn(trainvec)
+    if ((p != -1.0) and (p != 1.0)):
+        print("Your predictions must be equal to +1 or -1.")
+        sys.exit(0)
+
+    if (p == trainres):
+        training_accuracy += 1
+
+training_accuracy *= 100/len(problem["TrainSamples"])
+
+# Calculate test accuracy
+test_accuracy = 0.0
 for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
-    p = predictfn(testvec)
-    test_error += abs(p-testres)
+    p = predictfn(trainvec)
+    if ((p != -1.0) and (p != 1.0)):
+        print("Your predictions must be equal to +1 or -1.")
+        sys.exit(0)
+
+    if (p == trainres):
+        test_accuracy += 1
+
+test_accuracy *= 100/len(problem["TestSamples"])
+
+
+#test_error = 0.0
+#for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
+#    p = predictfn(testvec)
+#    test_error += abs(p-testres)
     # if abs(p-testres) > 0.0001:
     #     print(p, testres, testvec)
-accuracy_percentage = test_error/len(problem["TestVectors"]) * 100
+#accuracy_percentage = test_error/len(problem["TestVectors"]) * 100
 
 ## Now we have evaluated the users solution, we need to package up as much metadata
 ## as possible for later grading.
@@ -107,9 +134,6 @@ else:
 
 problem_name    = args.problem
 problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
-training_error  = trained_result["training_error"]
-if training_error == None:
-    training_error = -1
 
 result_dict = {
     "problem_name":problem_name,
@@ -120,15 +144,12 @@ result_dict = {
     "source_code":source,
     "circuit_str":circuit_str,
     "training_time":dt,
-    "training_error":training_error,
-
-    "test_accuracy":accuracy_percentage,
-    "test_error":test_error,
+    "training_accuracy":training_accuracy,
+    "test_accuracy":test_accuracy,
 }
 
 
 time_str = datetime.datetime.utcfromtimestamp(time.time()).strftime('%H:%M')
-accuracy_str = f"{accuracy_percentage}"
 
 i = 0
 while os.path.exists(f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"):
@@ -138,7 +159,7 @@ fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
 
-print(f"Training error: {training_error:.2f}, taking {dt:.1f} seconds to train. Test error: {test_error:.2f}")
+print(f"Training accuracy: {training_accuracy:.2f}%, taking {dt:.1f} seconds to train. Test accuracy: {test_accuracy:.2f}%")
 
 if dt > problem["TimeEst"]:
     print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
