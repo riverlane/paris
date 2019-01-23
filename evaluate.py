@@ -82,7 +82,7 @@ if not callable(predictfn):
 
 # Calculate training accuracy
 training_accuracy = 0.0
-for trainvec, trainres in zip(problem["TrainSamples"], problem["TrainLabels"])[:sample_limit]:
+for trainvec, trainres in list(zip(problem["TrainSamples"], problem["TrainLabels"]))[:sample_limit]:
     p = predictfn(trainvec)
     if ((p != -1.0) and (p != 1.0)):
         print("Your predictions must be equal to +1 or -1.")
@@ -104,7 +104,7 @@ for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     if (p == trainres):
         test_accuracy += 1
 
-test_accuracy *= 100/len(problem["TestSamples"])
+test_accuracy *= 100/len(problem["TestVectors"])
 
 
 #test_error = 0.0
@@ -152,9 +152,9 @@ result_dict = {
 time_str = datetime.datetime.utcfromtimestamp(time.time()).strftime('%H:%M')
 
 i = 0
-while os.path.exists(f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"):
+while os.path.exists(f"{args.problem}_solution.{time_str}_{test_accuracy:.2f}_{i}.json"):
     i += 1
-fname = f"{args.problem}_solution.{time_str}_{accuracy_percentage:.2f}_{i}.json"
+fname = f"{args.problem}_solution.{time_str}_{test_accuracy:.2f}_{i}.json"
 
 with open(fname, "w") as f:
     json.dump(result_dict, f, indent=2)
