@@ -91,7 +91,7 @@ for trainvec, trainres in list(zip(problem["TrainSamples"], problem["TrainLabels
     if (p == trainres):
         training_accuracy += 1
 
-training_accuracy *= 100/len(problem["TrainSamples"])
+training_accuracy *= 100./sample_limit
 
 # Calculate test accuracy
 test_accuracy = 0.0
@@ -104,7 +104,7 @@ for testvec, testres in zip(problem["TestVectors"], problem["TestLabels"]):
     if (p == trainres):
         test_accuracy += 1
 
-test_accuracy *= 100/len(problem["TestVectors"])
+test_accuracy *= 100./len(problem["TestVectors"])
 
 
 #test_error = 0.0
