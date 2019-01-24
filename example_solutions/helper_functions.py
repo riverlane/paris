@@ -74,7 +74,7 @@ def gate_repr(f):
     try:
         f(circ, qreg)
     except TypeError:
-        # if there are global var lookups in f, we try to concrelty eval
+        # if there are global var lookups in f, we try to directly eval
         # it... does not work. so we need the qubit indices to be bound
         return "? unbound qubit indices"
     # print(circ.calls)

@@ -5,6 +5,7 @@
 import projectq.ops as ops
 from projectq import MainEngine, cengines
 from projectq.backends import Simulator
+from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
 import numpy as np
 import itertools
@@ -56,7 +57,7 @@ def generate_pm_space_vectors(NQ, N, circuit):
         # print(f"label {label} exp ZZ { engine.backend.get_expectation_value(ops.QubitOperator('Z0 Z1'), qreg) }")
 
         for gate, idx in circuit:
-            if gate == ops.CNOT:
+            if type(gate) is ops._metagates.ControlledGate:
                 gate | (qreg[idx][0], qreg[idx][1])
             else:
                 gate | qreg[idx] # apply the test gates
@@ -82,7 +83,7 @@ def generate_basis_vectors(NQ, circuit):
         engine.backend.set_wavefunction(int_to_basis_element(state, NQ), qreg) # we've been given this state.
 
         for gate, idx in circuit:
-            if gate == ops.CNOT:
+            if type(gate) is ops._metagates.ControlledGate:
                 gate | (qreg[idx][0], qreg[idx][1])
             else:
                 gate | qreg[idx] # apply the test gates
@@ -166,13 +167,18 @@ if 2 in args.problems:
 
 D_problem_3 = {
     "Name":"discrete_problem3",
-    "NumQubits":5,
-    "U":[(ops.H, i) for i in range(5)] +
-        [(ops.CNOT, slice(i, i+2, 1)) for i in range(4)],
+    "NumQubits":4,
+    "U":[(ops.H, i) for i in range(4)] +
+        [(ops.CNOT, slice(2, 4, 1))],
     "Udag":None,
     "NSamples":5000,
     "TimeEst":5,
-    "Hint":"""Torture test for SVM. Large layers of gates.
+    "Hint":"""A larger problem with a 2 qubit gate.
+There is a single one qubit operation [H, X, Y] on each qubit to start,
+and then a single CNOT linking 2 neighbouring gates.
+
+You will need to restrict the search to only the depth-5 circuits that have this
+structure.
 """
 }
 
@@ -187,7 +193,10 @@ C_problem_4 = {
     "Udag":None,
     "NSamples":500,
     "TimeEst":5,
-    "Hint":"""Torture test for SVM - large HW ansatz with random params.
+    "Hint":"""Continuous problem with 4 qubits.
+This problem is based on a "state preperation circuit" for VQE - used in quantum chemistry.
+The circuit is called the Hardware Efficent Ansatz and you can see it's inverse in continuous_solver.
+You should use the continuous_solver for this and larger continuous problems.
 """
 }
 
@@ -224,87 +233,65 @@ if 4 in args.problems:
 
 C_problem_5 = {
     "Name":"continuous_problem5",
-    "NumQubits":4,
+    "NumQubits":10,
     "Udag":None,
-    "NSamples":20000,
+    "NSamples":200,
     "TimeEst":1200,
-    "Hint":"""Continuous problem with 4 qubits.
-This problem is based on a "state preperation circuit" for VQE - used in quantum chemistry.
-The circuit is called the Hardware Efficent Ansatz and you can see it's inverse in continuous_solver.
-You should use the continuous_solver for this and larger continuous problems.
-"""
 }
 
 if 5 in args.problems:
-    outer_depth = 2
-    inner_depth = 1
-    depth = outer_depth*inner_depth
 
     num_qubits = C_problem_5["NumQubits"]
-    num_params = num_qubits*outer_depth*inner_depth
-    param_values = np.random.uniform(low=0.0, high=2.0*np.pi, size=num_params)
-
-    rot_arr = [ops.Rx, ops.Ry, ops.Rz]
-    rots = np.random.choice(rot_arr, size=num_params)
-
-    rots_str = ['']*num_params
-    for iparam in range(num_params):
-        if (rots[iparam] == ops.Rx):
-            rots_str[iparam] = 'Rx'
-        elif (rots[iparam] == ops.Ry):
-            rots_str[iparam] = 'Ry'
-        elif (rots[iparam] == ops.Rz):
-            rots_str[iparam] = 'Rz'
-
-    hint_str = ""
-
-
-    if (inner_depth == 1):
-        hint_str += f"""{inner_depth} rotation gate is applied to each qubit.
-"""
-    else:
-        hint_str += f"""{inner_depth} rotation gates are applied to each qubit.
-"""
-    if (num_qubits == 2):
-        hint_str += f"""This is followed by a CNOT gate. The first qubit is used
-to control a NOT gate on the second.
-"""
-    else:
-        hint_str += f"""This is followed by {num_qubits - 1} CNOT gates. Each qubit in turn
-(except the last one) is used to control a NOT gate on the next qubit.
-"""
-
-    if (outer_depth == 2):
-        hint_str += f"""This whole process (rotations and CNOTS) is repeated once more.
-"""
-    elif (outer_depth > 2):
-        hint_str += f"""This whole process (rotations and CNOTS) is repeated {outer_depth-1} times more.
-"""
-
-    hint_str += f"""The rotation gates are given below. They are ordered by qubit and then
-application order so that the first rotation listed is the first rotation applied
-to the first qubit, the second rotation listed is the second rotation applied to
-the first qubit, and so on. The gates are:
-{', '.join(rots_str)}.
-"""
-
-    C_problem_5["Hint"] += hint_str
-
+    param_values = np.random.uniform(low=0.0, high=2.0*np.pi, size=num_qubits)
     circuit = []
 
-    for iod in range(outer_depth):
-        for iid in range(inner_depth):
-            idepth = iod*inner_depth + iid
+    rot_arr = [ops.Rx, ops.Ry, ops.Rz]
+    rots = np.random.choice(rot_arr, size=num_qubits)
+    for iq, (rot, theta) in enumerate(zip(rots, param_values)):
+        circuit.append( (rot(theta), iq) )
 
-            for iq in range(num_qubits):
-                circuit.append( (rots[depth*iq + idepth](param_values[depth*iq + idepth]), iq) )
+    control_arr = [ops.C(ops.X), ops.C(ops.H), ops.C(ops.Y)]
+    controls = np.random.choice(control_arr, size=num_qubits-1)
+    for iq, control in enumerate(controls):
+        circuit.append( (control, slice(iq, iq+2, 1)) )
+    circuit.append( (ops.C(ops.X), slice(-1,-1-num_qubits,-num_qubits+1)) ) # loop the last control around.
 
-        for iq in range(num_qubits - 1):
-            circuit.append( (ops.CNOT, slice(iq,iq+2,1)))
-
-
+    print(circuit)
     C_problem_5["U"] = circuit
     C_problem_5 = add_samples(C_problem_5)
+
+    # add drawing for the hint.
+    qr = QuantumRegister(num_qubits, "qr")
+    circ = QuantumCircuit(qr)
+
+    for iq, (rot, theta) in enumerate(zip(rots, param_values)):
+        if rot == ops.Rx:
+            circ.rx(0.0, qr[iq])
+        if rot == ops.Ry:
+            circ.ry(0.0, qr[iq])
+        if rot == ops.Rz:
+            circ.rz(0.0, qr[iq])
+
+    for iq, control in enumerate(controls):
+        if control == ops.C(ops.X):
+            circ.cx(qr[iq], qr[iq+1])
+        if control == ops.C(ops.H):
+            circ.ch(qr[iq], qr[iq+1])
+        if control == ops.C(ops.Y):
+            circ.cy(qr[iq], qr[iq+1])
+
+    circ.cx(qr[num_qubits-1], qr[0]) # loop the last control around.
+
+    circascii = circ.draw().single_string()
+
+
+    C_problem_5["Hint"] = """In this circuit we wrap round a control in order to require a _very_ large circuit of the type you used
+for problem 4. In order to solve this you will need to invert the circuit we are giving explicity:
+"""
+    C_problem_5["Hint"] += circascii
+    C_problem_5["Hint"] += """
+You need to optimise over the rotations. The angle is given above as 0, but it can be anything from 0 to 2pi."""
+
     print("done 5")
 
 
