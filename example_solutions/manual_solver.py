@@ -1,6 +1,6 @@
 from .helper_functions import compute_parity_exp_value, inference_retval, print_circuit
 from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
-
+import numpy as np
 
 def manual_solver(training_data):
     # we ignore the training data as we will look at it by hand!
@@ -8,7 +8,7 @@ def manual_solver(training_data):
     for training_vec in training_data:
         print("\t{}".format(training_vec))
 
-    num_qubits = 1
+    num_qubits = int(np.log2(len(training_data[0][0])))
     qr = QuantumRegister(num_qubits, "qr")
     circ = QuantumCircuit(qr)
     simulator = BasicAer.get_backend('statevector_simulator')
