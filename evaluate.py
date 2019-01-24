@@ -153,7 +153,7 @@ with open(fname, "w") as f:
 
 print(f"Training accuracy: {training_accuracy:.2f}%, taking {dt:.1f} seconds to train. Test accuracy: {test_accuracy:.2f}%")
 
-if dt > problem["TimeEst"]:
-    print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
+#if dt > problem["TimeEst"]:
+#    print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
 
 print(f"Run saved to {fname}.\nUpload with:\n\tck store_experiment qml --json_file={fname}")

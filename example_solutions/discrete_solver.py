@@ -25,10 +25,12 @@ def discrete_solver(training_data):
             lambda circ, qreg, i=i: circ.h(qreg[i]),
             lambda circ, qreg, i=i: circ.x(qreg[i]),
         ])
-        if num_qubits>1:
-            allowable_gates.append(
-                lambda circ, qreg, i=i: circ.cx(qreg[i], qreg[(i+1) % num_qubits]),
-            )
+
+        # Not needed for problem 1, but you will need to include this for problem 2.
+        #if num_qubits>1:
+        #    allowable_gates.append(
+        #        lambda circ, qreg, i=i: circ.cx(qreg[i], qreg[(i+1) % num_qubits]),
+        #    )
     print('-' * 80)
     print("Allowable gates:")
     for current_gate in allowable_gates:

@@ -86,7 +86,7 @@ def continuous_solver(training_data):
     # Increasing the depth will allow more circuits to be  #
     # explored, but will mean there are more parameters to #
     # invert for.                                          #
-    depth = 1                                              #
+    depth = 0                                              #
     ########################################################
 
     num_qubits = int(np.log2(len(training_data[0][0])))
