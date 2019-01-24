@@ -11,6 +11,7 @@ import os
 import time
 import datetime
 import json
+import re
 import inspect
 import traceback
 import numpy as np
@@ -26,7 +27,7 @@ parser.add_argument('--print_problem_stats', "--stats", action='store_true',
 parser.add_argument('--cheat', action='store_true',
                     help='Prints the transformation circuit. DEBUG ONLY.')
 parser.add_argument('--problem', dest='problem', action='store',
-                    default="problem0",
+                    default="discrete_problem0",
                     help='Name of the problem to test against.')
 parser.add_argument('--sample_limit', "-n", action='store', type=int,
                     help='Number of training vectors to use - if your solution uses the hints, you can probably make this very small (~10) and train much more quickly.')
@@ -122,8 +123,9 @@ else:
     print("No circuit is available for this solution")
     circuit_str = None
 
-problem_name    = args.problem
-problem_index   = int(problem_name[7:]) if problem_name.startswith('problem') else -1
+problem_name    = args.problem[0:-4] if args.problem.endswith('.pyz') else args.problem
+match_obj       = re.match('\D+(\d+)', problem_name)
+problem_index   = int(match_obj.group(1)) if match_obj else -1
 
 result_dict = {
     "problem_name":problem_name,
