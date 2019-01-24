@@ -6,6 +6,13 @@ from qiskit import QuantumCircuit, QuantumRegister, BasicAer, execute
 
 class HardwareEfficientAnsatzInverse(object):
 
+
+    ###############################################################
+    # This circuit has a particular structure that will work well #
+    # for problem 4 but not for problem 5. Use the problem 5 hint # 
+    # to write a new circuit structure.                           #
+    ###############################################################
+
     def __init__(self, num_qubits, depth, params):
 
         self._num_qubits = num_qubits
@@ -74,7 +81,14 @@ def continuous_solver(training_data):
 
     simulator = BasicAer.get_backend('statevector_simulator')
 
-    depth = 1
+
+    ########################################################
+    # Increasing the depth will allow more circuits to be  #
+    # explored, but will mean there are more parameters to #
+    # invert for.                                          #
+    depth = 1                                              #
+    ########################################################
+
     num_qubits = int(np.log2(len(training_data[0][0])))
 
     # Hardware efficient parameter setup
@@ -85,8 +99,13 @@ def continuous_solver(training_data):
 
     init_params = np.random.uniform(0.0, 2.0*np.pi, size=num_params)
 
-    res = minimize(fun=obj_fun, x0=init_params, method='Nelder-Mead',
-                   tol=1e-1, options={'disp':True, 'maxiter':1000})
+    ###################################################################
+    # Look at the documentation for scipy.optimize.minimize.          #
+    # There are parameters you can change, which may lead to          #
+    # improved results.                                               #
+    res = minimize(fun=obj_fun, x0=init_params, method='Nelder-Mead', #
+                   tol=1e-1, options={'disp':True, 'maxiter':1000})   #
+    ###################################################################
 
     best_params = res.x
     best_circ   = build_circuit(num_qubits, depth, best_params)
