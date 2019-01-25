@@ -37,7 +37,7 @@ input_state_mye     = [1/sqrt(2), -1j/sqrt(2) ]     # state |-i>    or Y-
 
 for input_statevector in (input_state_zero, input_state_one, input_state_plus, input_state_minus, input_state_eye, input_state_mye):
     print( "Input statevector: {}".format(input_statevector) )
-    output_statevector = execute(circ, simulator, backend_options={"initial_statevector": input_statevector}).result().get_statevector(circ)
+    output_statevector = list( execute(circ, simulator, backend_options={"initial_statevector": input_statevector}).result().get_statevector(circ) )
     print( "Output statevector: {}".format(output_statevector) )
     print("")
 
