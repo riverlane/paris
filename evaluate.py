@@ -131,7 +131,7 @@ result_dict = {
     "problem_name":problem_name,
     "problem_index":problem_index,
 
-    "training_vectors_limit":args.sample_limit,
+    "training_vectors_limit":sample_limit,
     "solution_function_name":args.solution_function_name,
     "source_code":source,
     "circuit_str":circuit_str,
