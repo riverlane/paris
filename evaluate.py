@@ -9,7 +9,6 @@ import pickle
 import sys
 import os
 import time
-import datetime
 import json
 import re
 import inspect
@@ -140,20 +139,22 @@ result_dict = {
     "test_accuracy":test_accuracy,
 }
 
+## Create a unique name for the JSON output file
+#
+output_fileprefix = '_'.join(['solution_to', problem_name, 'by', args.solution_function_name])
+idx = 0
+while os.path.exists( f'{output_fileprefix}_{idx}.json' ):
+    idx += 1
+output_filename = f'{output_fileprefix}_{idx}.json'
 
-time_str = datetime.datetime.utcfromtimestamp(time.time()).strftime('%H:%M')
-
-i = 0
-while os.path.exists(f"{args.problem}_solution.{time_str}_{test_accuracy:.2f}_{i}.json"):
-    i += 1
-fname = f"{args.problem}_solution.{time_str}_{test_accuracy:.2f}_{i}.json"
-
-with open(fname, "w") as f:
-    json.dump(result_dict, f, indent=2)
+## Record the results in that JSON file:
+#
+with open(output_filename, "w") as f:
+    json.dump(result_dict, f, indent=4)
 
 print(f"Training accuracy: {training_accuracy:.2f}%, taking {dt:.1f} seconds to train. Test accuracy: {test_accuracy:.2f}%")
 
 #if dt > problem["TimeEst"]:
 #    print(f"It took more than {problem['TimeEst']} seconds to train your solution - we are sure there is a better method!")
 
-print(f"Run saved to {fname}.\nUpload with:\n\tck store_experiment qml --json_file={fname}")
+print(f"Run saved to {fname}.\nUpload with:\n\tck store_experiment qml --json_file={output_filename}")
